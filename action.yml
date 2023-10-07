@@ -3,7 +3,7 @@ author: Yui KITSU
 description: |
   Run gitignore-in command and if .gitignore is updated, generate pull request.
 branding:
-  icon: folder-minus
+  icon: file-minus
   color: white
 
 inputs:
@@ -19,7 +19,21 @@ inputs:
       Default: main
     required: false
     default: main
-outputs: {}
+outputs:
+  pull-request-number:
+    description: Pull request number.
+    value: ${{ steps.create_pull_request.outputs.pull-request-number }}
+  pull-request-url:
+    description: Pull request URL.
+    value: ${{ steps.create_pull_request.outputs.pull-request-url }}
+  pull-request-operation:
+    description: |
+      The pull request operation performed by the action, `created`, `updated` or `closed`.
+    value: ${{ steps.create_pull_request.outputs.pull-request-operation }}
+  pull-request-head-sha:
+    description: |
+      The SHA of the head commit of the pull request.
+    value: ${{ steps.create_pull_request.outputs.pull-request-head-sha }}
 
 runs:
   using: composite
@@ -27,7 +41,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        branch: ${{ inputs.base_branch }}
+        ref: ${{ inputs.base_branch }}
 
     - uses: gitignore-in/install-gibo@v0.1.0
     - run: |
@@ -54,6 +68,7 @@ runs:
       shell: bash
 
     - uses: peter-evans/create-pull-request@v5
+      id: create_pull_request
       with:
         branch: ${{ inputs.branch_name }}
         base: ${{ inputs.base_branch }}
