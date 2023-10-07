@@ -27,7 +27,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        branch: ${{ inputs.base_branch }}
+        ref: ${{ inputs.base_branch }}
 
     - uses: gitignore-in/install-gibo@v0.1.0
     - run: |
