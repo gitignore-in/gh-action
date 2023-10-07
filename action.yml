@@ -1,0 +1,66 @@
+name: gitignore-in
+author: Yui KITSU
+description: |
+  Run gitignore-in command and if .gitignore is updated, generate pull request.
+branding:
+  icon: folder-minus
+  color: white
+
+inputs:
+  branch_name:
+    description: |
+      Branch name to create pull request.
+      Default: gitignore-in
+    required: false
+    default: gitignore-in
+  base_branch:
+    description: |
+      Base branch name to create pull request.
+      Default: main
+    required: false
+    default: main
+outputs: {}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        branch: ${{ inputs.base_branch }}
+
+    - uses: gitignore-in/install-gibo@v0.1.0
+    - run: |
+        tmpdir=$(mktemp -d)
+        cd "${tmpdir}"
+        version=v0.1.0
+        # TODO: support other platform
+        target=gitignore-in-x86_64-unknown-linux-gnu-v0.1.0.tar.gz
+        url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
+        wget "${url}"
+        tar -xzf "${target}"
+        cp gitignore-in /usr/local/bin
+        chmod +x /usr/local/bin/gitignore-in
+        rm -rf "${tmpdir}"
+      shell: bash
+
+    - name: run gitignore-in
+      run: gitignore-in
+      shell: bash
+
+    - name: check .gitignore
+      id: check
+      run: git diff --name-only .gitignore | grep .gitignore || echo '' > /dev/stdout
+      shell: bash
+
+    - uses: peter-evans/create-pull-request@v5
+      with:
+        branch: ${{ inputs.branch_name }}
+        base: ${{ inputs.base_branch }}
+        commit-message: Update .gitignore by gitignore-in
+        delete-branch: true
+        title: Update .gitignore
+        body: |
+          Update .gitignore by gitignore-in
+      env:
+        GH_TOKEN: ${{ github.token }}
