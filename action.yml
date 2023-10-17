@@ -47,19 +47,19 @@ runs:
     - run: |
         tmpdir=$(mktemp -d)
         cd "${tmpdir}"
-        version=v0.1.0
+        version=v0.2.0
         # TODO: support other platform
-        target=gitignore-in-x86_64-unknown-linux-gnu-v0.1.0.tar.gz
+        target=gitignore-in-x86_64-unknown-linux-gnu-v0.2.0.tar.gz
         url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
         wget "${url}"
         tar -xzf "${target}"
-        cp gitignore-in /usr/local/bin
-        chmod +x /usr/local/bin/gitignore-in
+        cp gitignore.in /usr/local/bin
+        chmod +x /usr/local/bin/gitignore.in
         rm -rf "${tmpdir}"
       shell: bash
 
-    - name: run gitignore-in
-      run: gitignore-in
+    - name: run gitignore.in
+      run: gitignore.in
       shell: bash
 
     - name: check .gitignore
@@ -72,10 +72,10 @@ runs:
       with:
         branch: ${{ inputs.branch_name }}
         base: ${{ inputs.base_branch }}
-        commit-message: Update .gitignore by gitignore-in
+        commit-message: Update .gitignore by gitignore.in
         delete-branch: true
         title: Update .gitignore
         body: |
-          Update .gitignore by gitignore-in
+          Update .gitignore by gitignore.in
       env:
         GH_TOKEN: ${{ github.token }}
