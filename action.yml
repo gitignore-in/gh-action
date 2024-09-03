@@ -76,7 +76,7 @@ runs:
         fi
       shell: bash
 
-    - uses: peter-evans/create-pull-request@v6
+    - uses: peter-evans/create-pull-request@v7
       if: steps.check.outputs.changed == 'true'
       id: create_pull_request
       with:
