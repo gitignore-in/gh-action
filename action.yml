@@ -64,10 +64,20 @@ runs:
 
     - name: check .gitignore
       id: check
-      run: git diff --name-only .gitignore | grep .gitignore || echo '' > /dev/stdout
+      run: |
+        git diff --name-only .gitignore | grep .gitignore || echo '' > /dev/stdout
+        # check if .gitignore is changed and not only comments
+        changed=$(git diff .gitignore | grep '^[+-][^+-]' | grep -v -e '^\+\s*#' -e '^\-\s*#' -e '^$') || echo '' > /dev/stdout
+        if [ -n "${changed}" ]; then
+            # echo "::save-state name=changed::true"
+            echo "changed=true" >> $GITHUB_STATE
+        else
+            echo "changed=false" >> $GITHUB_STATE
+        fi
       shell: bash
 
     - uses: peter-evans/create-pull-request@v6
+      if: steps.check.outputs.changed == 'true'
       id: create_pull_request
       with:
         branch: ${{ inputs.branch_name }}
