@@ -42,6 +42,7 @@ runs:
       with:
         fetch-depth: 0
         ref: ${{ inputs.base_branch }}
+        path: repository
 
     - uses: gitignore-in/install-gibo@v0.1.0
     - run: |
@@ -61,20 +62,14 @@ runs:
     - name: run gitignore.in
       run: gitignore.in
       shell: bash
+      working-directory: repository
 
     - name: check .gitignore
       id: check
       run: |
-        git diff --name-only .gitignore | grep .gitignore || echo '' > /dev/stdout
-        # check if .gitignore is changed and not only comments
-        changed=$(git diff .gitignore | grep '^[+-][^+-]' | grep -v -e '^\+\s*#' -e '^\-\s*#' -e '^$') || echo '' > /dev/stdout
-        if [ -n "${changed}" ]; then
-            # echo "::save-state name=changed::true"
-            echo "changed=true" >> $GITHUB_STATE
-        else
-            echo "changed=false" >> $GITHUB_STATE
-        fi
+        "${{ github.action_path }}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
       shell: bash
+      working-directory: repository
 
     - uses: peter-evans/create-pull-request@v8
       if: steps.check.outputs.changed == 'true'
@@ -82,6 +77,7 @@ runs:
       with:
         branch: ${{ inputs.branch_name }}
         base: ${{ inputs.base_branch }}
+        path: repository
         commit-message: Update .gitignore by gitignore.in
         delete-branch: true
         title: Update .gitignore
