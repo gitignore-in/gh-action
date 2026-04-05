@@ -1,0 +1,49 @@
+name: prepare action release update
+
+on:
+  repository_dispatch:
+    types: [gitignore-in-release-published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released gitignore.in version tag (for example, v0.2.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve released version
+        id: version
+        env:
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          version="${DISPATCH_VERSION:-$INPUT_VERSION}"
+          if [ -z "${version}" ]; then
+            echo "version input is required" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update bundled gitignore.in version
+        run: ./scripts/update-version.sh "${{ steps.version.outputs.version }}"
+
+      - name: Create update pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/update-bundled-gitignore-in
+          delete-branch: true
+          commit-message: Update bundled gitignore.in
+          title: Update bundled gitignore.in to ${{ steps.version.outputs.version }}
+          body: |
+            Prepare the GitHub Action for the latest gitignore.in release.
+
+            - update the bundled `gitignore.in` download version to `${{ steps.version.outputs.version }}`

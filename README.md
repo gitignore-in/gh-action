@@ -28,6 +28,14 @@ steps:
 - uses: gitignore-in/gh-action@main
 ```
 
+## Maintenance
+
+To update the bundled `gitignore.in` release manually:
+
+```bash
+./scripts/update-version.sh v0.2.0
+```
+
 ## License
 
 MIT
