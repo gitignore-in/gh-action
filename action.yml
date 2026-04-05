@@ -65,7 +65,7 @@ runs:
     - name: check .gitignore
       id: check
       run: |
-        ./scripts/has-meaningful-gitignore-diff.sh .gitignore
+        "${{ github.action_path }}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
       shell: bash
 
     - uses: peter-evans/create-pull-request@v8
