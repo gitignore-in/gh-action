@@ -36,6 +36,9 @@ To update the bundled `gitignore.in` release manually:
 ./scripts/update-version.sh v0.2.0
 ```
 
+To rehearse the release-preparation workflow without opening a PR, run
+`prepare action release update` with `mode=dry-run`.
+
 ## License
 
 MIT
