@@ -38,6 +38,8 @@ To update the bundled `gitignore.in` release manually:
 
 To rehearse the release-preparation workflow without opening a PR, run
 `prepare action release update` with `mode=dry-run`.
+The workflow accepts `vMAJOR.MINOR.PATCH` release tags and verifies the
+corresponding `gitignore-in/gitignore-in` release before updating `action.yml`.
 
 ## License
 
