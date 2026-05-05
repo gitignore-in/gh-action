@@ -44,7 +44,19 @@ jobs:
             echo "version input is required" >&2
             exit 1
           fi
+          if ! [[ "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must use vMAJOR.MINOR.PATCH format: ${version}" >&2
+            exit 1
+          fi
           mode="${DISPATCH_MODE:-${INPUT_MODE:-prepare-pr}}"
+          case "${mode}" in
+            prepare-pr|dry-run)
+              ;;
+            *)
+              echo "mode must be prepare-pr or dry-run: ${mode}" >&2
+              exit 1
+              ;;
+          esac
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "mode=${mode}" >> "${GITHUB_OUTPUT}"
 
@@ -53,6 +65,11 @@ jobs:
     needs: resolve
     steps:
       - uses: actions/checkout@v6
+
+      - name: Verify released version exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view "${{ needs.resolve.outputs.version }}" --repo gitignore-in/gitignore-in >/dev/null
 
       - name: Update bundled gitignore.in version
         run: ./scripts/update-version.sh "${{ needs.resolve.outputs.version }}"
