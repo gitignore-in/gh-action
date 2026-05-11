@@ -46,7 +46,9 @@ runs:
 
     - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
     - run: |
+        set -euo pipefail
         tmpdir=$(mktemp -d)
+        trap 'rm -rf "${tmpdir}"' EXIT
         cd "${tmpdir}"
         version=v0.2.0
         case "${RUNNER_OS}-${RUNNER_ARCH}" in
@@ -69,12 +71,13 @@ runs:
         esac
         url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
         wget "${url}"
+        grep -F "  ${target}" "${{ github.action_path }}/bundled-binary.sha256" > "${target}.sha256"
+        shasum -a 256 -c "${target}.sha256"
         tar -xzf "${target}"
         mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
         cp gitignore.in "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
         chmod +x "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
         echo "${RUNNER_TEMP}/gitignore-in/bin" >> "${GITHUB_PATH}"
-        rm -rf "${tmpdir}"
       shell: bash
 
     - name: run gitignore.in
