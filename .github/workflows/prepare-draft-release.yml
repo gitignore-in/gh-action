@@ -24,14 +24,27 @@ jobs:
       - name: Resolve release version
         id: version
         env:
+          GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           version="${INPUT_VERSION}"
           if [ -z "${version}" ]; then
-            version="$(grep -Eo 'version=v[0-9][0-9.]*' action.yml | head -n1 | cut -d= -f2)"
+            latest="$(gh release view --repo "${GITHUB_REPOSITORY}" --json tagName --jq '.tagName')"
+            if [ -z "${latest}" ]; then
+              echo "no latest release found; provide a version via workflow_dispatch input" >&2
+              exit 1
+            fi
+            if ! [[ "${latest}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "latest release tag does not match vMAJOR.MINOR.PATCH: ${latest}" >&2
+              exit 1
+            fi
+            major="${BASH_REMATCH[1]}"
+            minor="${BASH_REMATCH[2]}"
+            patch="${BASH_REMATCH[3]}"
+            version="v${major}.${minor}.$((patch + 1))"
           fi
-          if [ -z "${version}" ]; then
-            echo "could not resolve release version" >&2
+          if ! [[ "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must use vMAJOR.MINOR.PATCH format: ${version}" >&2
             exit 1
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
