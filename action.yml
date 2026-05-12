@@ -94,7 +94,8 @@ runs:
             ;;
         esac
         url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
-        wget "${url}"
+        echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
+        wget --tries=3 --timeout=60 "${url}"
         grep -F "  ${target}" "${{ github.action_path }}/bundled-binary.sha256" > "${target}.sha256"
         shasum -a 256 -c "${target}.sha256"
         tar -xzf "${target}"

@@ -80,7 +80,8 @@ jobs:
           version="$(grep -Eo 'version=v[0-9][0-9.]*' action.yml | head -n1 | cut -d= -f2)"
           target="$(grep -Eo 'gitignore-in-x86_64-unknown-linux-gnu-v[0-9][0-9.]*\.tar\.gz' action.yml | head -n1)"
           url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
-          wget "${url}"
+          echo "Downloading ${url}" >&2
+          wget --tries=3 --timeout=60 "${url}"
           grep -F "  ${target}" bundled-binary.sha256 > "${target}.sha256"
           shasum -a 256 -c "${target}.sha256"
           tar -xzf "${target}"
