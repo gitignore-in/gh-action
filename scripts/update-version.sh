@@ -65,8 +65,8 @@ done
 # Stage the action.yml rewrite next to the new checksum file. We only swap
 # both into the repo after they have both been produced successfully.
 staging_action="${tmpdir}/action.yml"
-sed \
-	-e "s/version=v[0-9][0-9.]*$/version=${version}/" \
+sed -E \
+	-e "s/version=v[0-9]+\\.[0-9]+\\.[0-9]+$/version=${version}/" \
 	"${action_file}" >"${staging_action}"
 if ! grep -qE "^[[:space:]]*version=${version}\$" "${staging_action}"; then
 	echo "action.yml version= line did not update to ${version}" >&2
