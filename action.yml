@@ -34,6 +34,12 @@ outputs:
     description: |
       The SHA of the head commit of the pull request.
     value: ${{ steps.create_pull_request.outputs.pull-request-head-sha }}
+  boilerplates-ref:
+    description: |
+      The git commit SHA of the gitignore boilerplates database
+      (github.com/toptal/gitignore) used when generating .gitignore.
+      Empty string if the boilerplates directory was not available.
+    value: ${{ steps.boilerplates_ref.outputs.boilerplates-ref }}
 
 runs:
   using: composite
@@ -85,6 +91,18 @@ runs:
       run: gitignore.in
       shell: bash
       working-directory: repository
+
+    - name: capture boilerplates ref
+      id: boilerplates_ref
+      run: |
+        boilerplates_dir="${HOME}/.gitignore-boilerplates"
+        if [ -d "${boilerplates_dir}/.git" ]; then
+          ref=$(git -C "${boilerplates_dir}" rev-parse HEAD 2>/dev/null || echo "")
+        else
+          ref=""
+        fi
+        echo "boilerplates-ref=${ref}" >> "${GITHUB_OUTPUT}"
+      shell: bash
 
     - name: check .gitignore
       id: check
