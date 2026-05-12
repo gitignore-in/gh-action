@@ -66,6 +66,18 @@ jobs:
           "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
           grep '^changed=true$' "${GITHUB_OUTPUT}"
 
+      - name: untracked file is detected as changed
+        run: |
+          tmpdir=$(mktemp -d)
+          cd "${tmpdir}"
+          git init
+          git config user.name test
+          git config user.email test@example.com
+          printf 'node_modules/\n' > .gitignore
+          export GITHUB_OUTPUT="${tmpdir}/output.txt"
+          "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
+          grep '^changed=true$' "${GITHUB_OUTPUT}"
+
   example:
     runs-on: ubuntu-latest
     name: test
