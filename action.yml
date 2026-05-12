@@ -19,6 +19,30 @@ inputs:
       Default: main
     required: false
     default: main
+  commit_message:
+    description: |
+      Commit message for the .gitignore update.
+      Default: Update .gitignore by gitignore.in
+    required: false
+    default: Update .gitignore by gitignore.in
+  pr_title:
+    description: |
+      Pull request title.
+      Default: Update .gitignore
+    required: false
+    default: Update .gitignore
+  pr_body:
+    description: |
+      Pull request body.
+      Default: Update .gitignore by gitignore.in
+    required: false
+    default: Update .gitignore by gitignore.in
+  delete_branch:
+    description: |
+      Whether to delete the branch after the pull request is merged.
+      Default: true
+    required: false
+    default: "true"
 outputs:
   pull-request-number:
     description: Pull request number.
@@ -99,10 +123,9 @@ runs:
         branch: ${{ inputs.branch_name }}
         base: ${{ inputs.base_branch }}
         path: repository
-        commit-message: Update .gitignore by gitignore.in
-        delete-branch: true
-        title: Update .gitignore
-        body: |
-          Update .gitignore by gitignore.in
+        commit-message: ${{ inputs.commit_message }}
+        delete-branch: ${{ inputs.delete_branch }}
+        title: ${{ inputs.pr_title }}
+        body: ${{ inputs.pr_body }}
       env:
         GH_TOKEN: ${{ github.token }}
