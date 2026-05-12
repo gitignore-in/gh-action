@@ -69,10 +69,13 @@ jobs:
       - name: Verify released version exists
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release view "${{ needs.resolve.outputs.version }}" --repo gitignore-in/gitignore-in >/dev/null
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+        run: gh release view "${RELEASE_VERSION}" --repo gitignore-in/gitignore-in >/dev/null
 
       - name: Update bundled gitignore.in version
-        run: ./scripts/update-version.sh "${{ needs.resolve.outputs.version }}"
+        env:
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+        run: ./scripts/update-version.sh "${RELEASE_VERSION}"
 
       - name: Download bundled release artifact
         run: |
@@ -102,7 +105,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Update bundled gitignore.in version
-        run: ./scripts/update-version.sh "${{ needs.resolve.outputs.version }}"
+        env:
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+        run: ./scripts/update-version.sh "${RELEASE_VERSION}"
 
       - name: Create update pull request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8

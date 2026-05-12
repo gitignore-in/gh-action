@@ -102,7 +102,7 @@ runs:
         url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
         echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
         wget --tries=3 --timeout=60 "${url}"
-        grep -F "  ${target}" "${{ github.action_path }}/bundled-binary.sha256" > "${target}.sha256"
+        grep -F "  ${target}" "${GITHUB_ACTION_PATH}/bundled-binary.sha256" > "${target}.sha256"
         shasum -a 256 -c "${target}.sha256"
         tar -xzf "${target}"
         mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
@@ -131,7 +131,7 @@ runs:
     - name: check .gitignore
       id: check
       run: |
-        "${{ github.action_path }}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
+        "${GITHUB_ACTION_PATH}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
       shell: bash
       working-directory: repository
 
