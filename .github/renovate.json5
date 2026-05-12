@@ -2,5 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>kitsuyui/renovate-config"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^action\\.yml$/"
+      ],
+      "matchStrings": [
+        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "gitignore-in/gitignore-in",
+      "versioningTemplate": "semver"
+    }
   ]
 }
