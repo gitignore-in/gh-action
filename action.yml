@@ -106,8 +106,8 @@ runs:
         shasum -a 256 -c "${target}.sha256"
         tar -xzf "${target}"
         mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
-        cp gitignore.in "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
-        chmod +x "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
+        install -m 0755 gitignore.in "${tmpdir}/gitignore.in.installed"
+        mv "${tmpdir}/gitignore.in.installed" "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
         echo "${RUNNER_TEMP}/gitignore-in/bin" >> "${GITHUB_PATH}"
       shell: bash
 
