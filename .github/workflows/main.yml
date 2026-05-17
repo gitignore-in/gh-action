@@ -57,6 +57,22 @@ jobs:
           "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
           grep '^changed=false$' "${GITHUB_OUTPUT}"
 
+      - name: whitespace-only diff is ignored
+        run: |
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "${tmpdir}"' EXIT
+          cp .gitignore "${tmpdir}/.gitignore"
+          cd "${tmpdir}"
+          git init
+          git config user.name test
+          git config user.email test@example.com
+          git add .gitignore
+          git commit -m init
+          printf '\n   \n\t\n' >> .gitignore
+          export GITHUB_OUTPUT="${tmpdir}/output.txt"
+          "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
+          grep '^changed=false$' "${GITHUB_OUTPUT}"
+
       - name: meaningful diff is detected
         run: |
           tmpdir=$(mktemp -d)

@@ -16,7 +16,7 @@ fi
 
 if git diff -- "${target}" |
 	grep '^[+-][^+-]' |
-	grep -vq -e '^[+-][[:space:]]*#' -e '^$'; then
+	grep -vq -e '^[+-][[:space:]]*#' -e '^[+-][[:space:]]*$'; then
 	echo "changed=true" >>"${GITHUB_OUTPUT:-/dev/stdout}"
 else
 	echo "changed=false" >>"${GITHUB_OUTPUT:-/dev/stdout}"
