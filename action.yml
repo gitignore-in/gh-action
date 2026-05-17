@@ -43,6 +43,15 @@ inputs:
       Default: true
     required: false
     default: "true"
+  boilerplates_ref:
+    description: |
+      Optional git ref (branch, tag, or full SHA) for the gitignore boilerplates
+      database (github.com/toptal/gitignore). When set, the boilerplates database
+      is checked out at this ref after the update, making .gitignore generation
+      reproducible across runs. Leave empty to use the latest commit (default
+      behaviour, non-deterministic).
+    required: false
+    default: ""
 outputs:
   pull-request-number:
     description: Pull request number.
@@ -75,6 +84,8 @@ runs:
         path: repository
 
     - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
+      with:
+        boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - run: |
         set -euo pipefail
         tmpdir=$(mktemp -d)
