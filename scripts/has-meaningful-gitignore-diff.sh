@@ -15,8 +15,17 @@ if ! git diff --name-only -- "${target}" | grep -q .; then
 fi
 
 if git diff --ignore-space-at-eol -- "${target}" |
-	grep '^[+-][^+-]' |
-	grep -vq -e '^[+-][[:space:]]*#' -e '^[+-][[:space:]]*$'; then
+	awk '
+		/^diff --git / { in_hunk = 0; next }
+		/^@@ / { in_hunk = 1; next }
+		in_hunk && /^[+-]/ {
+			content = substr($0, 2)
+			if (content !~ /^[[:space:]]*(#|$)/) {
+				found = 1
+			}
+		}
+		END { exit found ? 0 : 1 }
+	'; then
 	echo "changed=true" >>"${GITHUB_OUTPUT:-/dev/stdout}"
 else
 	echo "changed=false" >>"${GITHUB_OUTPUT:-/dev/stdout}"
