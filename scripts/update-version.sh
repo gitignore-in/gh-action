@@ -73,5 +73,5 @@ if ! grep -qE "^[[:space:]]*version=${version}\$" "${staging_action}"; then
 	exit 1
 fi
 
-mv "${staging_action}" "${action_file}"
 mv "${staging_file}" "${checksum_file}"
+mv "${staging_action}" "${action_file}"
