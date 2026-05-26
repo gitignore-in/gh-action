@@ -64,6 +64,10 @@ To rehearse the release-preparation workflow without opening a PR, run
 The workflow accepts `vMAJOR.MINOR.PATCH` release tags and verifies the
 corresponding `gitignore-in/gitignore-in` release before updating `action.yml`.
 
+See [Operational state machines](docs/state-machines.md) for the pull request,
+draft release, release update, and workflow concurrency boundaries that govern
+this action.
+
 ## License
 
 MIT
