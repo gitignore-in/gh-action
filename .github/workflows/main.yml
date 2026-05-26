@@ -78,6 +78,40 @@ jobs:
       - name: action.yml and bundled-binary.sha256 are coherent
         run: scripts/check-version-sha256-coherence.sh
 
+  output-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: boilerplates ref output accepts commit hashes
+        run: |
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "${tmpdir}"' EXIT
+          mkdir -p "${tmpdir}/bin" "${tmpdir}/boilerplates/.git"
+          cat >"${tmpdir}/bin/git" <<'SH'
+          #!/usr/bin/env sh
+          printf '0123456789abcdef0123456789abcdef01234567\n'
+          SH
+          chmod +x "${tmpdir}/bin/git"
+          PATH="${tmpdir}/bin:${PATH}" GITHUB_OUTPUT="${tmpdir}/output.txt" \
+            scripts/capture-boilerplates-ref.sh "${tmpdir}/boilerplates"
+          grep '^boilerplates-ref=0123456789abcdef0123456789abcdef01234567$' "${tmpdir}/output.txt"
+
+      - name: malformed boilerplates ref cannot inject outputs
+        run: |
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "${tmpdir}"' EXIT
+          mkdir -p "${tmpdir}/bin" "${tmpdir}/boilerplates/.git"
+          cat >"${tmpdir}/bin/git" <<'SH'
+          #!/usr/bin/env sh
+          printf '0123456789abcdef0123456789abcdef01234567\ninjected=true\n'
+          SH
+          chmod +x "${tmpdir}/bin/git"
+          PATH="${tmpdir}/bin:${PATH}" GITHUB_OUTPUT="${tmpdir}/output.txt" \
+            scripts/capture-boilerplates-ref.sh "${tmpdir}/boilerplates"
+          grep '^boilerplates-ref=$' "${tmpdir}/output.txt"
+          ! grep '^injected=true$' "${tmpdir}/output.txt"
+
   diff-detection:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
