@@ -53,6 +53,35 @@ jobs:
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
+      - name: Refuse to rewrite a published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "${tmpdir}"' EXIT
+
+          set +e
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" 2>"${tmpdir}/release-error")"
+          status=$?
+          set -e
+
+          if [ "${status}" -ne 0 ]; then
+            if grep -q 'Not Found (HTTP 404)' "${tmpdir}/release-error"; then
+              exit 0
+            fi
+            cat "${tmpdir}/release-error" >&2
+            exit "${status}"
+          fi
+
+          is_draft="$(printf '%s' "${release_json}" | jq -r '.draft')"
+          if [ "${is_draft}" = "true" ]; then
+            exit 0
+          fi
+          echo "release ${VERSION} already exists and is published; choose a new version" >&2
+          exit 1
+
       - name: Create or update draft release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
