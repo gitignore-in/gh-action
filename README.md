@@ -53,16 +53,22 @@ To produce reproducible `.gitignore` output, pass a specific commit SHA:
 
 ## Maintenance
 
-To update the bundled `gitignore.in` release manually:
+The action downloads the bundled `gitignore.in` release version declared in
+`action.yml`, and verifies each platform artifact with `bundled-binary.sha256`.
+
+When `gitignore-in/gitignore-in` publishes a new release, the
+`prepare action release update` workflow can prepare the version bump pull
+request. To update the bundled release manually instead, run:
 
 ```bash
-./scripts/update-version.sh v0.2.0
+./scripts/update-version.sh v0.2.1
 ```
 
 To rehearse the release-preparation workflow without opening a PR, run
 `prepare action release update` with `mode=dry-run`.
 The workflow accepts `vMAJOR.MINOR.PATCH` release tags and verifies the
-corresponding `gitignore-in/gitignore-in` release before updating `action.yml`.
+corresponding `gitignore-in/gitignore-in` release before updating `action.yml`
+and `bundled-binary.sha256`.
 
 See [Operational state machines](docs/state-machines.md) for the pull request,
 draft release, release update, and workflow concurrency boundaries that govern
