@@ -28,6 +28,14 @@ steps:
 - uses: gitignore-in/gh-action@main
 ```
 
+For production use, pin to a specific tag or SHA to avoid unexpected changes:
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: gitignore-in/gh-action@v0.2.3  # or pin to a full SHA
+```
+
 ## Inputs
 
 | Input | Description | Default |
@@ -49,6 +57,25 @@ To produce reproducible `.gitignore` output, pass a specific commit SHA:
 - uses: gitignore-in/gh-action@main
   with:
     boilerplates_ref: "abc1234"  # SHA from github.com/toptal/gitignore
+```
+
+## Outputs
+
+| Output | Description |
+|---|---|
+| `pull-request-number` | Pull request number (empty when no PR was created or updated) |
+| `pull-request-url` | Pull request URL |
+| `pull-request-operation` | Operation performed: `created`, `updated`, or `closed` |
+| `pull-request-head-sha` | SHA of the head commit of the pull request |
+| `boilerplates-ref` | Commit SHA of the boilerplates database used; empty string if unavailable |
+
+Example — notify on new PR:
+
+```yaml
+- uses: gitignore-in/gh-action@main
+  id: gitignore
+- if: steps.gitignore.outputs.pull-request-operation == 'created'
+  run: echo "New PR ${{ steps.gitignore.outputs.pull-request-url }}"
 ```
 
 ## Maintenance
