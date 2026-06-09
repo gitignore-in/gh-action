@@ -175,3 +175,31 @@ jobs:
           status=$?
           set -e
           [ "${status}" -eq 124 ]
+
+      - name: preserves normal exit when command finishes during timeout race
+        run: |
+          probe=$(mktemp)
+          rm -f "${probe}"
+          trap 'rm -f "${probe}"' EXIT
+
+          kill() {
+            if [ "${1:-}" = "-0" ] && [ -n "${RUN_WITH_TIMEOUT_RACE_PROBE:-}" ]; then
+              builtin kill "$@"
+              result=$?
+              if [ "${result}" -eq 0 ]; then
+                : > "${RUN_WITH_TIMEOUT_RACE_PROBE}"
+                sleep 0.2
+              fi
+              return "${result}"
+            fi
+
+            builtin kill "$@"
+          }
+          export -f kill
+          export RUN_WITH_TIMEOUT_RACE_PROBE="${probe}"
+
+          set +e
+          scripts/run-with-timeout.sh 1 bash -c "while [ ! -f \"\${RUN_WITH_TIMEOUT_RACE_PROBE}\" ]; do sleep 0.01; done; exit 0"
+          status=$?
+          set -e
+          [ "${status}" -eq 0 ]

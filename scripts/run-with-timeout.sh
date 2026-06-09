@@ -32,14 +32,15 @@ command_pid=$!
 (
 	sleep "${timeout_seconds}"
 	if kill -0 "${command_pid}" 2>/dev/null; then
-		printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
-		: >"${timeout_marker}"
 		# Signal the whole process group first; fall back to the direct PID.
-		kill -- -"${command_pid}" 2>/dev/null || kill "${command_pid}" 2>/dev/null || true
-		# SIGKILL fallback: give the process up to 5 s to exit gracefully.
-		sleep 5
-		if kill -0 "${command_pid}" 2>/dev/null; then
-			kill -9 -- -"${command_pid}" 2>/dev/null || kill -9 "${command_pid}" 2>/dev/null || true
+		if kill -- -"${command_pid}" 2>/dev/null || kill "${command_pid}" 2>/dev/null; then
+			printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
+			: >"${timeout_marker}"
+			# SIGKILL fallback: give the process up to 5 s to exit gracefully.
+			sleep 5
+			if kill -0 "${command_pid}" 2>/dev/null; then
+				kill -9 -- -"${command_pid}" 2>/dev/null || kill -9 "${command_pid}" 2>/dev/null || true
+			fi
 		fi
 	fi
 ) &
