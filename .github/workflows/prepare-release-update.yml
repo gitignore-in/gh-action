@@ -29,6 +29,7 @@ permissions:
 jobs:
   resolve:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       mode: ${{ steps.resolve.outputs.mode }}
@@ -66,6 +67,7 @@ jobs:
 
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: resolve
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -103,6 +105,7 @@ jobs:
 
   prepare-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [resolve, validate]
     if: ${{ needs.resolve.outputs.mode != 'dry-run' }}
     steps:
