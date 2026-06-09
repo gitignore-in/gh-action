@@ -158,15 +158,22 @@ jobs:
           grep '^changed=true$' "${GITHUB_OUTPUT}"
 
   example:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.os }})
     timeout-minutes: 15
-    name: test
     permissions:
       contents: write
       pull-requests: write
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./
+      - name: verify binary is accessible after action
+        run: gitignore.in --version
 
   example-pinned-boilerplates:
     runs-on: ubuntu-latest
