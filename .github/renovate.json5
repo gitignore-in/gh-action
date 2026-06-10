@@ -7,18 +7,6 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^action\\.yml$/"
-      ],
-      "matchStrings": [
-        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "gitignore-in/gitignore-in",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
         "/^\\.github/workflows/.*\\.ya?ml$/"
       ],
       "matchStrings": [
