@@ -44,6 +44,7 @@ command_pid=$!
 	fi
 ) &
 watchdog_pid=$!
+trap 'kill "${watchdog_pid}" 2>/dev/null || true; wait "${watchdog_pid}" 2>/dev/null || true' TERM INT
 
 set +e
 wait "${command_pid}" 2>/dev/null
