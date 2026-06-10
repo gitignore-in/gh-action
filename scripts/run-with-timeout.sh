@@ -18,7 +18,15 @@ tmpdir="$(mktemp -d)"
 timeout_marker="${tmpdir}/timed-out"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-"$@" &
+# setsid(1) places the command in a new session so that killing the process
+# group (kill -- -$pid) reaches the command and all its descendants.
+# On platforms where setsid is unavailable (e.g. macOS), fall back to starting
+# the command directly; in that case only the top-level PID is signalled.
+if command -v setsid >/dev/null 2>&1; then
+	setsid "$@" &
+else
+	"$@" &
+fi
 command_pid=$!
 
 (
@@ -26,10 +34,17 @@ command_pid=$!
 	if kill -0 "${command_pid}" 2>/dev/null; then
 		printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
 		: >"${timeout_marker}"
-		kill "${command_pid}" 2>/dev/null || true
+		# Signal the whole process group first; fall back to the direct PID.
+		kill -- -"${command_pid}" 2>/dev/null || kill "${command_pid}" 2>/dev/null || true
+		# SIGKILL fallback: give the process up to 5 s to exit gracefully.
+		sleep 5
+		if kill -0 "${command_pid}" 2>/dev/null; then
+			kill -9 -- -"${command_pid}" 2>/dev/null || kill -9 "${command_pid}" 2>/dev/null || true
+		fi
 	fi
 ) &
 watchdog_pid=$!
+trap 'kill "${watchdog_pid}" 2>/dev/null || true; wait "${watchdog_pid}" 2>/dev/null || true' TERM INT
 
 set +e
 wait "${command_pid}" 2>/dev/null

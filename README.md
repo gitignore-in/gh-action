@@ -13,6 +13,8 @@ gibo dump Windows
 echo "node_modules/"
 ```
 
+> **Note:** `gibo dump Windows` above is a `.gitignore` template example — it fetches Windows-specific ignore patterns for the generated `.gitignore` file. It is unrelated to the runner platform this action runs on.
+
 ```
 $ gitignore-in
 Generated .gitignore
@@ -35,6 +37,18 @@ steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@v0.2.3  # or pin to a full SHA
 ```
+
+## Supported platforms
+
+| Runner OS | Architecture | Supported |
+|---|---|---|
+| Linux | x64 (X64) | Yes |
+| Linux | ARM64 | Yes |
+| macOS | x64 (X64) | Yes |
+| macOS | ARM64 | Yes |
+| Windows | any | No |
+
+Windows and other platforms are not supported. The action exits with an error if run on an unsupported runner.
 
 ## Inputs
 

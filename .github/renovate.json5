@@ -7,13 +7,12 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^action\\.yml$/"
+        "/^\\.github/workflows/.*\\.ya?ml$/"
       ],
       "matchStrings": [
-        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
+        "go run (?<depName>mvdan\\.cc/sh/v3)/cmd/shfmt@(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "gitignore-in/gitignore-in",
+      "datasourceTemplate": "go",
       "versioningTemplate": "semver"
     },
     {
@@ -22,7 +21,7 @@
         "/^\\.github/workflows/.*\\.ya?ml$/"
       ],
       "matchStrings": [
-        "go run (?<depName>mvdan\\.cc/sh/v3)/cmd/shfmt@(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "go run (?<depName>github\\.com/rhysd/actionlint)/cmd/actionlint@(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "datasourceTemplate": "go",
       "versioningTemplate": "semver"

@@ -9,6 +9,7 @@ concurrency:
 jobs:
   shell-format:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
@@ -20,6 +21,7 @@ jobs:
 
   shell-lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
@@ -36,6 +38,7 @@ jobs:
 
   diff-detection:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     permissions:
       contents: read
     strategy:
@@ -141,6 +144,7 @@ jobs:
 
   example:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     name: test
     permissions:
       contents: write
@@ -151,6 +155,7 @@ jobs:
 
   example-pinned-boilerplates:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     name: test (boilerplates_ref passthrough)
     permissions:
       contents: write
@@ -163,6 +168,7 @@ jobs:
 
   timeout-helper:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     name: timeout helper
     permissions:
       contents: read
