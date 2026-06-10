@@ -38,9 +38,20 @@ action_file="${repo_root}/action.yml"
 staging_file="${tmpdir}/bundled-binary.sha256"
 : >"${staging_file}"
 
+curl_connect_timeout_seconds=30
+curl_max_time_seconds=300
+
 for arch in "${archs[@]}"; do
 	target="gitignore-in-${arch}-${version}.tar.gz"
-	curl --fail --location --silent --show-error --output "${tmpdir}/${target}" "${release_url}/${target}"
+	curl \
+		--fail \
+		--location \
+		--silent \
+		--show-error \
+		--connect-timeout "${curl_connect_timeout_seconds}" \
+		--max-time "${curl_max_time_seconds}" \
+		--output "${tmpdir}/${target}" \
+		"${release_url}/${target}"
 	(cd "${tmpdir}" && shasum -a 256 "${target}") >>"${staging_file}"
 done
 
