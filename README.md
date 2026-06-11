@@ -55,7 +55,7 @@ Windows and other platforms are not supported. The action exits with an error if
 | Input | Description | Default |
 |---|---|---|
 | `branch_name` | Branch name for the pull request | `gitignore-in` |
-| `base_branch` | Base branch for the pull request | `main` |
+| `base_branch` | Base branch for the pull request | repository default branch |
 | `commit_message` | Commit message for the `.gitignore` update | `Update .gitignore by gitignore.in` |
 | `pr_title` | Pull request title | `Update .gitignore` |
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
