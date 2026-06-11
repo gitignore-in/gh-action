@@ -131,13 +131,7 @@ runs:
     - name: capture boilerplates ref
       id: boilerplates_ref
       run: |
-        boilerplates_dir="${HOME}/.gitignore-boilerplates"
-        if [ -d "${boilerplates_dir}/.git" ]; then
-          ref=$(git -C "${boilerplates_dir}" rev-parse --verify HEAD)
-        else
-          ref=""
-        fi
-        echo "boilerplates-ref=${ref}" >> "${GITHUB_OUTPUT}"
+        "${GITHUB_ACTION_PATH}/scripts/capture-boilerplates-ref.sh"
       shell: bash
 
     - name: check .gitignore
