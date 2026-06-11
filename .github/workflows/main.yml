@@ -12,6 +12,21 @@ permissions:
   issues: write
 
 jobs:
+  required-status-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: read
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: required status checks are produced
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: scripts/check-required-status-checks.sh --repo "${GITHUB_REPOSITORY}" --pr "${PR_NUMBER}"
+
   shell-format:
     runs-on: ubuntu-latest
     timeout-minutes: 5
