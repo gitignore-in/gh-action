@@ -25,6 +25,17 @@
       ],
       "datasourceTemplate": "go",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^action\\.yml$/"
+      ],
+      "matchStrings": [
+        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
+      ],
+      "depNameTemplate": "gitignore-in/gitignore-in",
+      "datasourceTemplate": "github-releases"
     }
   ]
 }
