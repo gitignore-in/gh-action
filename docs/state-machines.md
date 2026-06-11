@@ -55,6 +55,19 @@ Boundary:
 - A published release is immutable for this workflow. To change a published
   release, publish a newer version instead of reusing the same tag.
 
+Responsibility:
+
+- A maintainer reviews the auto-generated draft release notes and clicks
+  **Publish release** in the GitHub Releases UI when the notes are accurate
+  and the release is ready.
+- No workflow publishes a release automatically; the publish step is always a
+  human decision.
+- If a draft accumulates without being published, a maintainer should either
+  publish it, delete it, or update `action.yml` to reflect the intended next
+  version.
+
+See [RELEASE.md](RELEASE.md) for release cadence guidance.
+
 Recovery:
 
 - If the workflow stops on `published-release`, rerun it with a new
