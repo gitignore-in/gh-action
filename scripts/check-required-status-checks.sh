@@ -9,6 +9,11 @@ PR_NUMBER="${PR_NUMBER:-}"
 
 usage() {
 	echo "Usage: $0 [--repo owner/repo] [--ruleset-name name] [--pr number]"
+	echo ""
+	echo "The PR number is resolved in this order:"
+	echo "  1. --pr <number> (overrides PR_NUMBER)"
+	echo "  2. PR_NUMBER environment variable"
+	echo "  3. GITHUB_EVENT_PATH file (pull_request.number via jq; set in GitHub Actions)"
 }
 
 while [ "$#" -gt 0 ]; do
