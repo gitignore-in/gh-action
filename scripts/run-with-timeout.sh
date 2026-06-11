@@ -29,22 +29,43 @@ else
 fi
 command_pid=$!
 
+signal_command() {
+	local signal="$1"
+	kill "-${signal}" -- -"${command_pid}" 2>/dev/null || kill "-${signal}" "${command_pid}" 2>/dev/null || true
+}
+
+terminate_command() {
+	local signal="${1:-TERM}"
+	signal_command "${signal}"
+	sleep 5
+	if kill -0 "${command_pid}" 2>/dev/null; then
+		signal_command KILL
+	fi
+}
+
+# shellcheck disable=SC2329 # Invoked by signal traps.
+handle_parent_signal() {
+	local signal="$1"
+	local status="$2"
+	trap '' TERM INT
+	kill "${watchdog_pid}" 2>/dev/null || true
+	wait "${watchdog_pid}" 2>/dev/null || true
+	terminate_command "${signal}"
+	wait "${command_pid}" 2>/dev/null || true
+	exit "${status}"
+}
+
 (
 	sleep "${timeout_seconds}"
 	if kill -0 "${command_pid}" 2>/dev/null; then
 		printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
 		: >"${timeout_marker}"
-		# Signal the whole process group first; fall back to the direct PID.
-		kill -- -"${command_pid}" 2>/dev/null || kill "${command_pid}" 2>/dev/null || true
-		# SIGKILL fallback: give the process up to 5 s to exit gracefully.
-		sleep 5
-		if kill -0 "${command_pid}" 2>/dev/null; then
-			kill -9 -- -"${command_pid}" 2>/dev/null || kill -9 "${command_pid}" 2>/dev/null || true
-		fi
+		terminate_command TERM
 	fi
 ) &
 watchdog_pid=$!
-trap 'kill "${watchdog_pid}" 2>/dev/null || true; wait "${watchdog_pid}" 2>/dev/null || true' TERM INT
+trap 'handle_parent_signal TERM 143' TERM
+trap 'handle_parent_signal INT 130' INT
 
 set +e
 wait "${command_pid}" 2>/dev/null

@@ -196,3 +196,6 @@ jobs:
           status=$?
           set -e
           [ "${status}" -eq 124 ]
+
+      - name: stops command group when wrapper receives SIGTERM
+        run: bash scripts/test-run-with-timeout-signals.sh
