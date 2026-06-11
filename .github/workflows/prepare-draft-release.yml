@@ -3,8 +3,6 @@ name: prepare draft release
 on:
   push:
     branches: [main]
-    paths:
-      - action.yml
   workflow_dispatch:
     inputs:
       version:
@@ -83,7 +81,15 @@ jobs:
           echo "release ${VERSION} already exists and is published; choose a new version" >&2
           exit 1
 
-      - name: Create or update draft release
+      - name: Delete existing draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release delete "${VERSION}" --repo "${GITHUB_REPOSITORY}" --yes 2>/dev/null || true
+
+      - name: Create draft release with current release notes
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
