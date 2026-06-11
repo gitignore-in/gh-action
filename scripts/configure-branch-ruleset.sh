@@ -21,8 +21,8 @@ if [ "${1:-}" = "--dry-run" ]; then
 	DRY_RUN=true
 fi
 
-ruleset_id=$(gh api "repos/${REPO}/rulesets" \
-	--jq ".[] | select(.name == \"${RULESET_NAME}\") | .id")
+ruleset_id=$(gh api "repos/${REPO}/rulesets" |
+	jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id')
 
 if [ -z "${ruleset_id}" ]; then
 	echo "Error: ruleset '${RULESET_NAME}' not found" >&2
