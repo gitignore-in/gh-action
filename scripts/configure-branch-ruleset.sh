@@ -40,17 +40,18 @@ required_checks='[
   {"context":"timeout helper"}
 ]'
 
-if "${DRY_RUN}"; then
-	echo "Dry run: would add required_status_checks to ruleset ${ruleset_id}"
-	echo "${required_checks}"
+current_sorted=$(gh api "repos/${REPO}/rulesets/${ruleset_id}" |
+	jq -r '[.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context] | sort | @json')
+desired_sorted=$(printf '%s' "${required_checks}" | jq -r '[.[].context] | sort | @json')
+
+if [ "${current_sorted}" = "${desired_sorted}" ]; then
+	echo "required_status_checks already up-to-date in ruleset ${ruleset_id}"
 	exit 0
 fi
 
-current=$(gh api "repos/${REPO}/rulesets/${ruleset_id}" \
-	--jq '[.rules[] | select(.type == "required_status_checks")]')
-
-if [ "${current}" != "[]" ]; then
-	echo "required_status_checks already present in ruleset ${ruleset_id}"
+if "${DRY_RUN}"; then
+	echo "Dry run: would update required_status_checks in ruleset ${ruleset_id}"
+	echo "${required_checks}"
 	exit 0
 fi
 
@@ -59,7 +60,7 @@ trap 'rm -f "${tmpfile}"' EXIT
 
 gh api "repos/${REPO}/rulesets/${ruleset_id}" \
 	--jq '{
-    rules: (.rules + [{
+    rules: ([.rules[] | select(.type != "required_status_checks")] + [{
       type: "required_status_checks",
       parameters: {
         strict_required_status_checks_policy: false,
@@ -71,4 +72,4 @@ gh api "repos/${REPO}/rulesets/${ruleset_id}" \
 gh api -X PUT "repos/${REPO}/rulesets/${ruleset_id}" \
 	--input "${tmpfile}" >/dev/null
 
-echo "Added required_status_checks to ruleset ${ruleset_id} (${RULESET_NAME})"
+echo "Updated required_status_checks in ruleset ${ruleset_id} (${RULESET_NAME})"
