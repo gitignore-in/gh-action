@@ -18,6 +18,9 @@ tmpdir="$(mktemp -d)"
 timeout_marker="${tmpdir}/timed-out"
 trap 'rm -rf "${tmpdir}"' EXIT
 
+# Grace period between SIGTERM and SIGKILL escalation.
+readonly KILL_GRACE_PERIOD_SECONDS=5
+
 # setsid(1) places the command in a new session so that killing the process
 # group (kill -- -$pid) reaches the command and all its descendants.
 # On platforms where setsid is unavailable (e.g. macOS), fall back to starting
@@ -37,7 +40,7 @@ signal_command() {
 terminate_command() {
 	local signal="${1:-TERM}"
 	signal_command "${signal}"
-	sleep 5
+	sleep "${KILL_GRACE_PERIOD_SECONDS}"
 	if kill -0 "${command_pid}" 2>/dev/null; then
 		signal_command KILL
 	fi
