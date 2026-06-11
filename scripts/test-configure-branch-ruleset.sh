@@ -8,26 +8,45 @@ trap 'rm -rf "${tmpdir}"' EXIT
 
 cat >"${tmpdir}/gh" <<'SCRIPT'
 #!/bin/sh
-case "${GH_MOCK_RULESETS:-single}" in
-single)
-	printf '%s\n' 123
+# Find the API path (first repos/... argument after `api`).
+path=""
+for arg in "$@"; do
+	case "${arg}" in
+	repos/*)
+		if [ -z "${path}" ]; then path="${arg}"; fi
+		;;
+	esac
+done
+case "${path}" in
+*/rulesets)
+	# Ruleset list: returned as a JSON array, matching the GitHub API shape.
+	case "${GH_MOCK_RULESETS:-single}" in
+	single)
+		printf '%s\n' '[{"name":"default-branch-baseline","id":123}]'
+		;;
+	none)
+		printf '%s\n' '[]'
+		;;
+	duplicate)
+		printf '%s\n' '[{"name":"default-branch-baseline","id":123},{"name":"default-branch-baseline","id":456}]'
+		;;
+	*)
+		echo "unexpected GH_MOCK_RULESETS=${GH_MOCK_RULESETS}" >&2
+		exit 2
+		;;
+	esac
 	;;
-none)
-	:
-	;;
-duplicate)
-	printf '%s\n' 123 456
-	;;
-*)
-	echo "unexpected GH_MOCK_RULESETS=${GH_MOCK_RULESETS}" >&2
-	exit 2
+*/rulesets/*)
+	# Ruleset detail: existing required_status_checks differs from desired,
+	# so the script reports that an update is needed.
+	printf '%s\n' '{"rules":[{"type":"required_status_checks","parameters":{"required_status_checks":[]}}]}'
 	;;
 esac
 SCRIPT
 chmod +x "${tmpdir}/gh"
 
 output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --dry-run)
-printf '%s\n' "${output}" | grep 'Dry run: would add required_status_checks to ruleset 123'
+printf '%s\n' "${output}" | grep 'Dry run: would update required_status_checks in ruleset 123'
 
 set +e
 output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=none scripts/configure-branch-ruleset.sh --dry-run 2>&1)
