@@ -60,22 +60,22 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          tmpdir="$(mktemp -d)"
-          trap 'rm -rf "${tmpdir}"' EXIT
 
           set +e
-          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" 2>"${tmpdir}/release-error")"
+          response_with_headers="$(gh api --include "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}")"
           status=$?
           set -e
 
           if [ "${status}" -ne 0 ]; then
-            if grep -q 'Not Found (HTTP 404)' "${tmpdir}/release-error"; then
+            http_status="$(printf '%s' "${response_with_headers}" | head -1 | tr -d '\r' | awk '{print $2}')"
+            if [ "${http_status}" = "404" ]; then
               exit 0
             fi
-            cat "${tmpdir}/release-error" >&2
+            printf '%s\n' "${response_with_headers}" >&2
             exit "${status}"
           fi
 
+          release_json="$(printf '%s' "${response_with_headers}" | sed '1,/^$/d')"
           is_draft="$(printf '%s' "${release_json}" | jq -r '.draft')"
           if [ "${is_draft}" = "true" ]; then
             exit 0
