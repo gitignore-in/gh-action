@@ -10,6 +10,12 @@ jobs:
   required-status-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Wait for the `test` aggregation gate: a `needs`-gated job does not register
+    # its status context until its dependencies finish, so this guard must run
+    # after it or it races and reports `test` as missing.
+    needs:
+      - test
+    if: ${{ always() }}
     permissions:
       checks: read
       contents: read
