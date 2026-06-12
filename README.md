@@ -25,14 +25,22 @@ If the .gitignore.in is changed, the action will create pull request automatical
 ## Usage
 
 ```yaml
+permissions:
+  contents: write       # needed to push the updated .gitignore to the PR branch
+  pull-requests: write  # needed to open and update the pull request
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@main
 ```
 
+> **Note:** Repositories whose default token permissions are set to read-only (common in organizations) must declare `contents: write` and `pull-requests: write` explicitly. The action uses `github.token` to create the pull request via `peter-evans/create-pull-request`, so without these permissions the PR step will fail silently.
+
 For production use, pin to a specific tag or SHA to avoid unexpected changes:
 
 ```yaml
+permissions:
+  contents: write
+  pull-requests: write
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@v0.2.3  # or pin to a full SHA
