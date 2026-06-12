@@ -175,6 +175,24 @@ jobs:
       - name: verify binary is accessible after action
         run: gitignore.in --version
 
+  # Aggregation gate that produces the bare `test` status context required by
+  # the `default-branch-baseline` ruleset. The platform matrix above reports as
+  # `test (ubuntu-latest)` / `test (macos-latest)`, so this job re-exposes a
+  # single `test` context that is green only when every matrix leg succeeds.
+  test:
+    needs:
+      - example
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: example matrix succeeded on all platforms
+        run: |
+          result='${{ needs.example.result }}'
+          test "${result}" = success
+
   example-pinned-boilerplates:
     runs-on: ubuntu-latest
     timeout-minutes: 15
