@@ -208,3 +208,6 @@ jobs:
 
       - name: stops command group when wrapper receives SIGTERM
         run: bash scripts/test-run-with-timeout-signals.sh
+
+      - name: uses exit 2 for update-version usage errors
+        run: bash scripts/test-update-version-usage.sh
