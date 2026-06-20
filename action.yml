@@ -48,8 +48,9 @@ inputs:
       Optional git ref (branch, tag, or full SHA) for the gitignore boilerplates
       database (github.com/toptal/gitignore). When set, the boilerplates database
       is checked out at this ref after the update, making .gitignore generation
-      reproducible across runs. Leave empty to use the latest commit (default
-      behaviour, non-deterministic).
+      reproducible across runs and recording that pinned commit SHA in generated
+      pull request bodies. Leave empty to use the latest commit (default
+      behaviour, non-deterministic); the action warns when this input is omitted.
     required: false
     default: ""
 outputs:
@@ -86,6 +87,11 @@ runs:
     - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
+    - name: warn when boilerplates_ref is not set
+      if: inputs.boilerplates_ref == ''
+      run: |
+        echo "::warning::boilerplates_ref is not set; generated pull requests will record the latest boilerplates database commit SHA, but the generated .gitignore may vary between runs."
+      shell: bash
     - run: |
         set -euo pipefail
         tmpdir=$(mktemp -d)
@@ -140,6 +146,26 @@ runs:
         echo "boilerplates-ref=${ref}" >> "${GITHUB_OUTPUT}"
       shell: bash
 
+    - name: compose pull request body
+      id: pr_body
+      env:
+        INPUT_PR_BODY: ${{ inputs.pr_body }}
+        BOILERPLATES_REF: ${{ steps.boilerplates_ref.outputs.boilerplates-ref }}
+      run: |
+        body_file="${RUNNER_TEMP}/gitignore-in-pr-body.md"
+        {
+          if [ -n "${INPUT_PR_BODY}" ]; then
+            printf '%s\n\n' "${INPUT_PR_BODY}"
+          fi
+          if [ -n "${BOILERPLATES_REF}" ]; then
+            printf 'Boilerplates database commit SHA: %s\n' "${BOILERPLATES_REF}"
+          else
+            printf 'Boilerplates database commit SHA: unavailable\n'
+          fi
+        } >"${body_file}"
+        echo "body-path=${body_file}" >> "${GITHUB_OUTPUT}"
+      shell: bash
+
     - name: check .gitignore
       id: check
       run: |
@@ -157,6 +183,6 @@ runs:
         commit-message: ${{ inputs.commit_message }}
         delete-branch: ${{ inputs.delete_branch }}
         title: ${{ inputs.pr_title }}
-        body: ${{ inputs.pr_body }}
+        body-path: ${{ steps.pr_body.outputs.body-path }}
       env:
         GH_TOKEN: ${{ github.token }}
