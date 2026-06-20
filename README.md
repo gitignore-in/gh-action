@@ -95,6 +95,11 @@ To produce reproducible `.gitignore` output, pass a specific commit SHA:
     boilerplates_ref: "abc1234"  # SHA from github.com/toptal/gitignore
 ```
 
+When `boilerplates_ref` is omitted, the action warns that the boilerplates
+database will follow the latest commit on each run. In all cases, generated
+PR bodies include the boilerplates database commit SHA used for that run so the
+provenance is visible in the pull request.
+
 ### Adjusting the generation timeout
 
 The `gitignore.in` generation step times out after 300 seconds by default.
@@ -102,7 +107,7 @@ Tune the value when a runner needs a shorter fail-fast limit or more time to
 fetch and render large templates:
 
 ```yaml
-- uses: gitignore-in/gh-action@main
+- uses: gitignore-in/gh-action
   with:
     timeout_seconds: "120"
 ```
