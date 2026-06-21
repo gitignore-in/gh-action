@@ -21,13 +21,23 @@ if [ "${1:-}" = "--dry-run" ]; then
 	DRY_RUN=true
 fi
 
-ruleset_id=$(gh api "repos/${REPO}/rulesets" |
+ruleset_ids=$(gh api "repos/${REPO}/rulesets" |
 	jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id')
 
-if [ -z "${ruleset_id}" ]; then
+ruleset_count=$(printf '%s\n' "${ruleset_ids}" | sed '/^$/d' | wc -l | tr -d ' ')
+
+if [ "${ruleset_count}" -eq 0 ]; then
 	echo "Error: ruleset '${RULESET_NAME}' not found" >&2
 	exit 1
 fi
+
+if [ "${ruleset_count}" -ne 1 ]; then
+	echo "Error: expected exactly one ruleset named '${RULESET_NAME}', found ${ruleset_count}" >&2
+	printf 'Matching ruleset IDs:\n%s\n' "${ruleset_ids}" >&2
+	exit 1
+fi
+
+ruleset_id=$(printf '%s\n' "${ruleset_ids}" | sed -n '1p')
 
 required_checks='[
   {"context":"shell-format"},
