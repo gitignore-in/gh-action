@@ -45,8 +45,9 @@ esac
 SCRIPT
 chmod +x "${tmpdir}/gh"
 
-output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --dry-run)
+output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --dry-run 2>&1)
 printf '%s\n' "${output}" | grep 'Dry run: would update required_status_checks in ruleset 123'
+printf '%s\n' "${output}" | grep '"context":"version-coherence"'
 
 set +e
 output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=none scripts/configure-branch-ruleset.sh --dry-run 2>&1)
