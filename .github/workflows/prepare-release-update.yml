@@ -22,14 +22,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   resolve:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       mode: ${{ steps.resolve.outputs.mode }}
@@ -69,6 +67,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: resolve
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
@@ -108,6 +108,9 @@ jobs:
     timeout-minutes: 10
     needs: [resolve, validate]
     if: ${{ needs.resolve.outputs.mode != 'dry-run' }}
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
