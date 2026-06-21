@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 if ! command -v setsid >/dev/null 2>&1; then
 	echo "setsid unavailable; skipping process-group cancellation test"
 	exit 0
@@ -11,7 +13,7 @@ trap 'rm -rf "${tmpdir}"' EXIT
 marker="${tmpdir}/writes"
 : >"${marker}"
 
-scripts/run-with-timeout.sh 30 bash -c "trap '' TERM; (trap '' TERM; while true; do printf x >> \"\$1\"; sleep 0.2; done) & wait" _ "${marker}" &
+"${SCRIPT_DIR}/run-with-timeout.sh" 30 bash -c "trap '' TERM; (trap '' TERM; while true; do printf x >> \"\$1\"; sleep 0.2; done) & wait" _ "${marker}" &
 wrapper_pid=$!
 
 for _ in 1 2 3 4 5; do

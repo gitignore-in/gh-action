@@ -34,6 +34,36 @@ When `gitignore-in/gitignore-in` publishes a new release, the `prepare action re
 workflow can be triggered automatically via `repository_dispatch` from upstream,
 or manually via workflow dispatch.
 
+### Upstream dispatch payload schema
+
+The workflow listens for `repository_dispatch` events of type `gitignore-in-release-published`.
+The `client_payload` must conform to the following schema:
+
+| Field | Type | Required | Valid values | Default |
+|---|---|---|---|---|
+| `version` | string | **required** | `vMAJOR.MINOR.PATCH` format (e.g. `v0.3.0`) | — |
+| `mode` | string | optional | `prepare-pr`, `dry-run` | `prepare-pr` |
+
+**`version`** must match the pattern `^v[0-9]+\.[0-9]+\.[0-9]+$`; the workflow exits with
+an error if the pattern does not match or the field is absent.
+
+**`mode`** controls workflow behaviour:
+- `prepare-pr` (default): validate the release and open an update pull request.
+- `dry-run`: validate the release only; skip pull request creation.
+
+If `mode` is omitted the workflow silently defaults to `prepare-pr`.
+Passing any value other than the two above causes the workflow to exit with an error.
+
+Example dispatch invocation via `gh`:
+
+```sh
+gh api repos/gitignore-in/gh-action/dispatches \
+  --method POST \
+  --field event_type=gitignore-in-release-published \
+  --field 'client_payload[version]=v0.3.0' \
+  --field 'client_payload[mode]=dry-run'
+```
+
 ### Human responsibility
 
 The `prepare action release update` workflow opens a pull request. A maintainer must:

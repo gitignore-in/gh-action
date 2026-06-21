@@ -1,7 +1,9 @@
 # GitHub Action for gitignore-in
 
+[![CI](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml/badge.svg)](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml)
+
 gitignore-in is a tool to generate .gitignore files from templates.
-This action runs gitignore-in and commits the result to the repository.
+This action runs gitignore-in and creates a pull request if the `.gitignore` file has changed.
 
 ## Example
 
@@ -25,14 +27,22 @@ If the .gitignore.in is changed, the action will create pull request automatical
 ## Usage
 
 ```yaml
+permissions:
+  contents: write       # needed to push the updated .gitignore to the PR branch
+  pull-requests: write  # needed to open and update the pull request
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@main
 ```
 
+> **Note:** Repositories whose default token permissions are set to read-only (common in organizations) must declare `contents: write` and `pull-requests: write` explicitly. The action uses `github.token` to create the pull request via `peter-evans/create-pull-request`, so without these permissions the PR step will fail silently.
+
 For production use, pin to a specific tag or SHA to avoid unexpected changes:
 
 ```yaml
+permissions:
+  contents: write
+  pull-requests: write
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@v0.2.3  # or pin to a full SHA
@@ -55,13 +65,19 @@ Windows and other platforms are not supported. The action exits with an error if
 | Input | Description | Default |
 |---|---|---|
 | `branch_name` | Branch name for the pull request | `gitignore-in` |
-| `base_branch` | Base branch for the pull request | `main` |
+| `base_branch` | Base branch for the pull request | repository default branch |
 | `commit_message` | Commit message for the `.gitignore` update | `Update .gitignore by gitignore.in` |
 | `pr_title` | Pull request title | `Update .gitignore` |
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
 | `timeout_seconds` | Positive timeout in seconds for the `gitignore.in` generation step. Lower this value for fail-fast workflows or raise it for slow runners. | `300` |
+| `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). When set to the bundled default, the binary is verified against `bundled-binary.sha256`. For any other version, SHA-256 verification is skipped; intended for testing pre-release binaries only. | `v0.2.1` |
+
+> **Note on input naming:** The existing inputs above (`branch_name`, `base_branch`, etc.) use
+> `snake_case` for historical reasons. The newer `gitignore-version` input uses `kebab-case` to
+> align with the outputs convention. A future major release will standardise all inputs to
+> `kebab-case`; until then, the table above shows the exact key names to use in `with:`.
 
 ### Pinning the boilerplates database
 

@@ -4,12 +4,12 @@ set -euo pipefail
 version="${1:-${GITIGNORE_IN_VERSION:-}}"
 if [ -z "${version}" ]; then
 	echo "usage: $0 <version>" >&2
-	exit 1
+	exit 2
 fi
 
 if ! [[ "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 	echo "version must use vMAJOR.MINOR.PATCH format: ${version}" >&2
-	exit 1
+	exit 2
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

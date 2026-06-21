@@ -16,9 +16,9 @@ inputs:
   base_branch:
     description: |
       Base branch name to create pull request.
-      Default: main
+      Leave empty to use the repository's default branch.
     required: false
-    default: main
+    default: ""
   commit_message:
     description: |
       Commit message for the .gitignore update.
@@ -59,6 +59,16 @@ inputs:
       Default: 300
     required: false
     default: "300"
+  gitignore-version:
+    description: |
+      Version of the gitignore-in binary to download (e.g. v0.2.1).
+      Defaults to the version bundled with this action release.
+      When set to the bundled version, the download is verified against
+      bundled-binary.sha256. When overridden to another version, SHA-256
+      verification is skipped and a warning is printed; use only for
+      testing pre-release binaries.
+    required: false
+    default: "v0.2.1"
 outputs:
   pull-request-number:
     description: Pull request number.
@@ -84,13 +94,13 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       with:
         fetch-depth: 0
-        ref: ${{ inputs.base_branch }}
+        ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
-    - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
+    - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - run: |
@@ -98,7 +108,8 @@ runs:
         tmpdir=$(mktemp -d)
         trap 'rm -rf "${tmpdir}"' EXIT
         cd "${tmpdir}"
-        version=v0.2.1
+        version="${GITIGNORE_IN_VERSION}"
+        bundled_version="v0.2.1"
         case "${RUNNER_OS}-${RUNNER_ARCH}" in
           Linux-X64)
             target="gitignore-in-x86_64-unknown-linux-gnu-${version}.tar.gz"
@@ -120,13 +131,19 @@ runs:
         url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
         echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
         wget --tries=3 --timeout=60 "${url}"
-        grep -F "  ${target}" "${GITHUB_ACTION_PATH}/bundled-binary.sha256" > "${target}.sha256"
-        shasum -a 256 -c "${target}.sha256"
+        if [ "${version}" = "${bundled_version}" ]; then
+          grep -F "  ${target}" "${GITHUB_ACTION_PATH}/bundled-binary.sha256" > "${target}.sha256"
+          shasum -a 256 -c "${target}.sha256"
+        else
+          echo "::warning::Custom gitignore-version '${version}' used; SHA-256 verification skipped. Only use for testing pre-release binaries." >&2
+        fi
         tar -xzf "${target}"
         mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
         install -m 0755 gitignore.in "${tmpdir}/gitignore.in.installed"
         mv "${tmpdir}/gitignore.in.installed" "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
         echo "${RUNNER_TEMP}/gitignore-in/bin" >> "${GITHUB_PATH}"
+      env:
+        GITIGNORE_IN_VERSION: ${{ inputs.gitignore-version }}
       shell: bash
 
     - name: run gitignore.in
@@ -161,7 +178,7 @@ runs:
       id: create_pull_request
       with:
         branch: ${{ inputs.branch_name }}
-        base: ${{ inputs.base_branch }}
+        base: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
         commit-message: ${{ inputs.commit_message }}
         delete-branch: ${{ inputs.delete_branch }}

@@ -1,3 +1,7 @@
 gibo dump Linux
 gibo dump Windows
 gibo dump macOS
+echo
+echo "# Agent workdirs"
+echo ".agent-inspect/"
+echo ".tmp/"
