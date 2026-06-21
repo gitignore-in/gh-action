@@ -190,21 +190,8 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: preserves command exit status
-        run: |
-          set +e
-          scripts/run-with-timeout.sh 5 bash -c 'exit 7'
-          status=$?
-          set -e
-          [ "${status}" -eq 7 ]
-
-      - name: exits 124 when command exceeds timeout
-        run: |
-          set +e
-          scripts/run-with-timeout.sh 1 bash -c 'sleep 5'
-          status=$?
-          set -e
-          [ "${status}" -eq 124 ]
+      - name: runs timeout helper tests
+        run: bash scripts/test-run-with-timeout.sh
 
       - name: stops command group when wrapper receives SIGTERM
         run: bash scripts/test-run-with-timeout-signals.sh
