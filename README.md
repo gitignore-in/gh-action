@@ -1,7 +1,7 @@
 # GitHub Action for gitignore-in
 
 gitignore-in is a tool to generate .gitignore files from templates.
-This action runs gitignore-in and commits the result to the repository.
+This action runs gitignore-in and creates a pull request if the `.gitignore` file has changed.
 
 ## Example
 
