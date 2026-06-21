@@ -96,6 +96,9 @@ jobs:
           "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
           grep '^changed=false$' "${GITHUB_OUTPUT}"
 
+      - name: gitignore diff helper regression tests
+        run: bash scripts/test-has-meaningful-gitignore-diff.sh
+
       - name: missing final newline diff is ignored
         run: |
           tmpdir=$(mktemp -d)
