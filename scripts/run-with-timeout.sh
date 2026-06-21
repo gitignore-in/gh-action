@@ -31,16 +31,21 @@ command_pid=$!
 
 signal_command() {
 	local signal="$1"
-	kill "-${signal}" -- -"${command_pid}" 2>/dev/null || kill "-${signal}" "${command_pid}" 2>/dev/null || true
+	kill "-${signal}" -- -"${command_pid}" 2>/dev/null || kill "-${signal}" "${command_pid}" 2>/dev/null
 }
 
-terminate_command() {
-	local signal="${1:-TERM}"
-	signal_command "${signal}"
+kill_after_grace() {
 	sleep 5
 	if kill -0 "${command_pid}" 2>/dev/null; then
-		signal_command KILL
+		signal_command KILL || true
 	fi
+}
+
+# shellcheck disable=SC2329 # Invoked by signal traps through handle_parent_signal.
+terminate_command() {
+	local signal="${1:-TERM}"
+	signal_command "${signal}" || return 1
+	kill_after_grace
 }
 
 # shellcheck disable=SC2329 # Invoked by signal traps.
@@ -50,7 +55,7 @@ handle_parent_signal() {
 	trap '' TERM INT
 	kill "${watchdog_pid}" 2>/dev/null || true
 	wait "${watchdog_pid}" 2>/dev/null || true
-	terminate_command "${signal}"
+	terminate_command "${signal}" || true
 	wait "${command_pid}" 2>/dev/null || true
 	exit "${status}"
 }
@@ -58,9 +63,11 @@ handle_parent_signal() {
 (
 	sleep "${timeout_seconds}"
 	if kill -0 "${command_pid}" 2>/dev/null; then
-		printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
-		: >"${timeout_marker}"
-		terminate_command TERM
+		if signal_command TERM; then
+			printf 'command timed out after %ss: %s\n' "${timeout_seconds}" "${command_display}" >&2
+			: >"${timeout_marker}"
+			kill_after_grace
+		fi
 	fi
 ) &
 watchdog_pid=$!
