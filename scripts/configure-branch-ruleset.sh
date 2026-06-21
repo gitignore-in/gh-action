@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Apply required-status-checks to the default-branch-baseline ruleset.
 #
 # Usage: ./scripts/configure-branch-ruleset.sh [--dry-run]
@@ -11,7 +11,7 @@
 #   diff-detection (ubuntu-latest), diff-detection (macos-latest),
 #   test, test (boilerplates_ref passthrough), timeout helper
 
-set -eu
+set -euo pipefail
 
 REPO="gitignore-in/gh-action"
 RULESET_NAME="default-branch-baseline"
