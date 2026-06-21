@@ -12,20 +12,7 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 action_file="${repo_root}/action.yml"
 sha256_file="${repo_root}/bundled-binary.sha256"
 
-action_version="$(
-	awk '
-		$1 == "gitignore-version:" { in_section = 1; next }
-		in_section && $1 == "default:" {
-			gsub(/"/, "", $2)
-			print $2
-			exit
-		}
-	' "${action_file}"
-)"
-if [ -z "${action_version}" ]; then
-	echo "ERROR: could not extract inputs.gitignore-version default from ${action_file}" >&2
-	exit 1
-fi
+action_version="$("${script_dir}/read-bundled-gitignore-version.sh" "${action_file}")"
 echo "action.yml version: ${action_version}"
 
 total="$(grep -c . "${sha256_file}" || true)"

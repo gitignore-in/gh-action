@@ -14,20 +14,7 @@ action_file="${repo_root}/action.yml"
 
 # Read the bundled version from action.yml so the installer stays in sync with
 # the release metadata without duplicating the default in two places.
-bundled_version="$(
-	awk '
-		$1 == "gitignore-version:" { in_section = 1; next }
-		in_section && $1 == "default:" {
-			gsub(/"/, "", $2)
-			print $2
-			exit
-		}
-	' "${action_file}"
-)"
-if [ -z "${bundled_version}" ]; then
-	echo "failed to determine bundled gitignore-version from ${action_file}" >&2
-	exit 1
-fi
+bundled_version="$("${script_dir}/read-bundled-gitignore-version.sh" "${action_file}")"
 
 if [ "${version}" != "${bundled_version}" ] && [ "${allow_unverified}" != "true" ]; then
 	echo "::error::Custom gitignore-version '${version}' requires allow-unverified-gitignore-version=true; SHA-256 verification is disabled without explicit opt-in." >&2
