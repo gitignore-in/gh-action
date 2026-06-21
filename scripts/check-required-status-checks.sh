@@ -8,14 +8,14 @@ RULESET_NAME="default-branch-baseline"
 PR_NUMBER="${PR_NUMBER:-}"
 
 usage() {
-	echo "Usage: $0 [--repo owner/repo] [--ruleset-name name] [--pr number]" >&2
+	echo "Usage: $0 [--repo owner/repo] [--ruleset-name name] [--pr number]"
 }
 
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	--repo)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		REPO="$2"
@@ -23,7 +23,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	--ruleset-name)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		RULESET_NAME="$2"
@@ -31,7 +31,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	--pr)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		PR_NUMBER="$2"
@@ -43,7 +43,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	*)
 		echo "Error: unknown argument: $1" >&2
-		usage
+		usage >&2
 		exit 2
 		;;
 	esac
