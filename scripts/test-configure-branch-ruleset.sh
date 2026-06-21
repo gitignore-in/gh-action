@@ -30,6 +30,11 @@ case "${path}" in
 	duplicate)
 		printf '%s\n' '[{"name":"default-branch-baseline","id":123},{"name":"default-branch-baseline","id":456}]'
 		;;
+	list-fails)
+		echo "gh api ruleset list failed" >&2
+		printf '%s\n' '[]'
+		exit 1
+		;;
 	*)
 		echo "unexpected GH_MOCK_RULESETS=${GH_MOCK_RULESETS}" >&2
 		exit 2
@@ -37,6 +42,11 @@ case "${path}" in
 	esac
 	;;
 */rulesets/*)
+	if [ "${GH_MOCK_DETAIL:-ok}" = "fails" ]; then
+		echo "gh api ruleset detail failed" >&2
+		printf '%s\n' '{"rules":[]}'
+		exit 1
+	fi
 	# Ruleset detail: existing required_status_checks differs from desired,
 	# so the script reports that an update is needed.
 	printf '%s\n' '{"rules":[{"type":"required_status_checks","parameters":{"required_status_checks":[]}}]}'
@@ -64,3 +74,25 @@ set -e
 printf '%s\n' "${output}" | grep "Error: expected exactly one ruleset named 'default-branch-baseline', found 2"
 printf '%s\n' "${output}" | grep '123'
 printf '%s\n' "${output}" | grep '456'
+
+set +e
+output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=list-fails scripts/configure-branch-ruleset.sh --dry-run 2>&1)
+status=$?
+set -e
+[ "${status}" -eq 1 ]
+printf '%s\n' "${output}" | grep 'gh api ruleset list failed'
+if printf '%s\n' "${output}" | grep -q "Error: ruleset 'default-branch-baseline' not found"; then
+	echo "ruleset list API failure was reported as a missing ruleset" >&2
+	exit 1
+fi
+
+set +e
+output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single GH_MOCK_DETAIL=fails scripts/configure-branch-ruleset.sh --dry-run 2>&1)
+status=$?
+set -e
+[ "${status}" -eq 1 ]
+printf '%s\n' "${output}" | grep 'gh api ruleset detail failed'
+if printf '%s\n' "${output}" | grep -q 'Dry run: would update required_status_checks'; then
+	echo "ruleset detail API failure was reported as an update diff" >&2
+	exit 1
+fi
