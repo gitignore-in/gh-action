@@ -1,5 +1,7 @@
 # GitHub Action for gitignore-in
 
+[![CI](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml/badge.svg)](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml)
+
 gitignore-in is a tool to generate .gitignore files from templates.
 This action runs gitignore-in and creates a pull request if the `.gitignore` file has changed.
 
