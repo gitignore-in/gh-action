@@ -8,6 +8,11 @@ if [ -z "${version}" ]; then
 	exit 2
 fi
 
+if [[ "${version}" == *$'\n'* || "${version}" == *$'\r'* ]]; then
+	echo "::error::gitignore-version must not contain newline characters." >&2
+	exit 1
+fi
+
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "${script_dir}/.." && pwd)"
 action_file="${repo_root}/action.yml"

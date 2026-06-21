@@ -128,6 +128,44 @@ test_custom_version_requires_explicit_opt_in() {
 	fi
 }
 
+test_version_rejects_newline_before_logging() {
+	local fixture_dir malicious_version output status
+	fixture_dir="$(make_fixture)"
+	malicious_version=$'v9.9.9\n::error::forged'
+
+	set +e
+	output="$(
+		run_installer "${fixture_dir}" "${malicious_version}" "true" 2>&1
+	)"
+	status=$?
+	set -e
+
+	if [ "${status}" -eq 0 ]; then
+		echo "expected newline-containing version to fail" >&2
+		exit 1
+	fi
+	if [ "${status}" -ne 1 ]; then
+		echo "expected exit 1, got ${status}" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+	if ! grep -F -- "gitignore-version must not contain newline characters" <<<"${output}" >/dev/null; then
+		echo "expected newline rejection message" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+	if grep -F -- "::error::forged" <<<"${output}" >/dev/null; then
+		echo "expected malicious version content to stay out of logs" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+	if [ -f "${fixture_dir}/logs/wget.log" ]; then
+		echo "expected no download attempt for newline-containing version" >&2
+		cat "${fixture_dir}/logs/wget.log" >&2
+		exit 1
+	fi
+}
+
 test_custom_version_with_opt_in_skips_sha256() {
 	local fixture_dir output status
 	fixture_dir="$(make_fixture)"
@@ -161,4 +199,5 @@ test_custom_version_with_opt_in_skips_sha256() {
 
 test_bundled_version_verifies_sha256
 test_custom_version_requires_explicit_opt_in
+test_version_rejects_newline_before_logging
 test_custom_version_with_opt_in_skips_sha256
