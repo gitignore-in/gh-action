@@ -58,16 +58,21 @@ fi
 tmpfile=$(mktemp)
 trap 'rm -f "${tmpfile}"' EXIT
 
-gh api "repos/${REPO}/rulesets/${ruleset_id}" \
-	--jq '{
+gh api "repos/${REPO}/rulesets/${ruleset_id}" |
+	jq --argjson rc "${required_checks}" '{
     rules: ([.rules[] | select(.type != "required_status_checks")] + [{
       type: "required_status_checks",
       parameters: {
         strict_required_status_checks_policy: false,
-        required_status_checks: '"${required_checks}"'
+        required_status_checks: $rc
       }
     }])
   }' >"${tmpfile}"
+
+if ! jq -e '.rules | arrays' "${tmpfile}" >/dev/null 2>&1; then
+	echo "Error: ruleset JSON construction failed; aborting PUT" >&2
+	exit 1
+fi
 
 gh api -X PUT "repos/${REPO}/rulesets/${ruleset_id}" \
 	--input "${tmpfile}" >/dev/null
