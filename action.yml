@@ -16,9 +16,9 @@ inputs:
   base_branch:
     description: |
       Base branch name to create pull request.
-      Default: main
+      Leave empty to use the repository's default branch.
     required: false
-    default: main
+    default: ""
   commit_message:
     description: |
       Commit message for the .gitignore update.
@@ -90,7 +90,7 @@ runs:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       with:
         fetch-depth: 0
-        ref: ${{ inputs.base_branch }}
+        ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
     - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32
@@ -169,7 +169,7 @@ runs:
       id: create_pull_request
       with:
         branch: ${{ inputs.branch_name }}
-        base: ${{ inputs.base_branch }}
+        base: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
         commit-message: ${{ inputs.commit_message }}
         delete-branch: ${{ inputs.delete_branch }}
