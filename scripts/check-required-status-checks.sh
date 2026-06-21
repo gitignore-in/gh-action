@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Verify that the default branch ruleset only requires checks produced by a PR.
 
-set -eu
+set -euo pipefail
 
 REPO="${GITHUB_REPOSITORY:-gitignore-in/gh-action}"
 RULESET_NAME="default-branch-baseline"
