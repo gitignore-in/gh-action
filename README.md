@@ -69,6 +69,12 @@ Windows and other platforms are not supported. The action exits with an error if
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
+| `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). When set to the bundled default, the binary is verified against `bundled-binary.sha256`. For any other version, SHA-256 verification is skipped; intended for testing pre-release binaries only. | `v0.2.1` |
+
+> **Note on input naming:** The existing inputs above (`branch_name`, `base_branch`, etc.) use
+> `snake_case` for historical reasons. The newer `gitignore-version` input uses `kebab-case` to
+> align with the outputs convention. A future major release will standardise all inputs to
+> `kebab-case`; until then, the table above shows the exact key names to use in `with:`.
 
 ### Pinning the boilerplates database
 
