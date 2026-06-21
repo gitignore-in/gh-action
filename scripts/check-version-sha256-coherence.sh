@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Verify that the version referenced in action.yml matches every entry in
-# bundled-binary.sha256. When a Renovate PR updates only the bundled_version=
-# line in action.yml without regenerating bundled-binary.sha256, the download
-# step fails at workflow runtime because grep finds no matching checksum line.
+# Verify that the bundled gitignore-version declared in action.yml matches
+# every entry in bundled-binary.sha256. When action.yml and the checksum file
+# drift, the download step fails at workflow runtime because the expected
+# checksum line cannot be found.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
@@ -12,10 +12,19 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 action_file="${repo_root}/action.yml"
 sha256_file="${repo_root}/bundled-binary.sha256"
 
-action_version="$(grep -E '^\s+bundled_version="v[0-9]+\.[0-9]+\.[0-9]+"$' "${action_file}" | sed -E 's/.*bundled_version="(v[0-9]+\.[0-9]+\.[0-9]+)".*/\1/')"
+<<<<<<< HEAD
+action_version="$(
+	awk '
+		$1 == "gitignore-version:" { in_section = 1; next }
+		in_section && $1 == "default:" {
+			gsub(/"/, "", $2)
+			print $2
+			exit
+		}
+	' "${action_file}"
+)"
 if [ -z "${action_version}" ]; then
-	echo "ERROR: could not extract bundled_version= from ${action_file}" >&2
-	echo "       grep pattern: '^\s+bundled_version=\"v[0-9]+\.[0-9]+\.[0-9]+\"$'" >&2
+	echo "ERROR: could not extract inputs.gitignore-version default from ${action_file}" >&2
 	exit 1
 fi
 echo "action.yml bundled_version: ${action_version}"
