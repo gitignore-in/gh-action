@@ -93,7 +93,7 @@ runs:
         ref: ${{ inputs.base_branch }}
         path: repository
 
-    - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
+    - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - run: |

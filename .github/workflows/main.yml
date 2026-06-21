@@ -10,6 +10,12 @@ jobs:
   required-status-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Wait for the `test` aggregation gate: a `needs`-gated job does not register
+    # its status context until its dependencies finish, so this guard must run
+    # after it or it races and reports `test` as missing.
+    needs:
+      - test
+    if: ${{ always() }}
     permissions:
       checks: read
       contents: read
@@ -161,15 +167,40 @@ jobs:
           grep '^changed=true$' "${GITHUB_OUTPUT}"
 
   example:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.os }})
     timeout-minutes: 15
-    name: test
     permissions:
       contents: write
       pull-requests: write
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./
+      - name: verify binary is accessible after action
+        run: gitignore.in --version
+
+  # Aggregation gate that produces the bare `test` status context required by
+  # the `default-branch-baseline` ruleset. The platform matrix above reports as
+  # `test (ubuntu-latest)` / `test (macos-latest)`, so this job re-exposes a
+  # single `test` context that is green only when every matrix leg succeeds.
+  test:
+    needs:
+      - example
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: example matrix succeeded on all platforms
+        run: |
+          result='${{ needs.example.result }}'
+          test "${result}" = success
 
   example-pinned-boilerplates:
     runs-on: ubuntu-latest
