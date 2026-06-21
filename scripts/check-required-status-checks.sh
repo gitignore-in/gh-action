@@ -59,8 +59,8 @@ if [ -z "${PR_NUMBER}" ]; then
 	exit 2
 fi
 
-ruleset_ids=$(gh api "repos/${REPO}/rulesets" \
-	--jq ".[] | select(.name == \"${RULESET_NAME}\") | .id")
+ruleset_ids=$(gh api "repos/${REPO}/rulesets" |
+	jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id')
 
 if [ -z "${ruleset_ids}" ]; then
 	echo "Error: ruleset '${RULESET_NAME}' not found in ${REPO}" >&2
