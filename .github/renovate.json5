@@ -32,7 +32,7 @@
         "/^action\\.yml$/"
       ],
       "matchStrings": [
-        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
+        "gitignore-version:\\n(?:    [^\\n]+\\n)*    default: \"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "gitignore-in/gitignore-in",
       "datasourceTemplate": "github-releases"
