@@ -95,6 +95,9 @@ gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name --jq '.[].name' >"${pr_
 checks_status=$?
 set -e
 
+# gh pr checks exits with code 8 when the PR has no checks (empty list).
+# This is not an error condition here — a PR with no checks simply produces an
+# empty file, which is handled correctly by the diff below.
 if [ "${checks_status}" -ne 0 ] && [ "${checks_status}" -ne 8 ]; then
 	echo "Error: failed to list checks for ${REPO}#${PR_NUMBER}" >&2
 	exit "${checks_status}"
