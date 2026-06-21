@@ -45,12 +45,12 @@ current_sorted=$(gh api "repos/${REPO}/rulesets/${ruleset_id}" |
 desired_sorted=$(printf '%s' "${required_checks}" | jq -r '[.[].context] | sort | @json')
 
 if [ "${current_sorted}" = "${desired_sorted}" ]; then
-	echo "required_status_checks already up-to-date in ruleset ${ruleset_id}"
+	echo "required_status_checks already up-to-date in ruleset ${ruleset_id}" >&2
 	exit 0
 fi
 
 if "${DRY_RUN}"; then
-	echo "Dry run: would update required_status_checks in ruleset ${ruleset_id}"
+	echo "Dry run: would update required_status_checks in ruleset ${ruleset_id}" >&2
 	echo "${required_checks}"
 	exit 0
 fi
@@ -77,4 +77,4 @@ fi
 gh api -X PUT "repos/${REPO}/rulesets/${ruleset_id}" \
 	--input "${tmpfile}" >/dev/null
 
-echo "Updated required_status_checks in ruleset ${ruleset_id} (${RULESET_NAME})"
+echo "Updated required_status_checks in ruleset ${ruleset_id} (${RULESET_NAME})" >&2
