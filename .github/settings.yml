@@ -1,0 +1,7 @@
+# Repository settings managed by probot/settings.
+# https://github.com/probot/settings
+repository:
+  topics:
+    - github-actions
+    - gitignore
+    - pull-request
