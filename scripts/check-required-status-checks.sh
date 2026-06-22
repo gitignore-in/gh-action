@@ -1,21 +1,21 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Verify that the default branch ruleset only requires checks produced by a PR.
 
-set -eu
+set -euo pipefail
 
 REPO="${GITHUB_REPOSITORY:-gitignore-in/gh-action}"
 RULESET_NAME="default-branch-baseline"
 PR_NUMBER="${PR_NUMBER:-}"
 
 usage() {
-	echo "Usage: $0 [--repo owner/repo] [--ruleset-name name] [--pr number]" >&2
+	echo "Usage: $0 [--repo owner/repo] [--ruleset-name name] [--pr number]"
 }
 
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	--repo)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		REPO="$2"
@@ -23,7 +23,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	--ruleset-name)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		RULESET_NAME="$2"
@@ -31,7 +31,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	--pr)
 		if [ "$#" -lt 2 ]; then
-			usage
+			usage >&2
 			exit 2
 		fi
 		PR_NUMBER="$2"
@@ -43,7 +43,7 @@ while [ "$#" -gt 0 ]; do
 		;;
 	*)
 		echo "Error: unknown argument: $1" >&2
-		usage
+		usage >&2
 		exit 2
 		;;
 	esac
@@ -59,8 +59,8 @@ if [ -z "${PR_NUMBER}" ]; then
 	exit 2
 fi
 
-ruleset_ids=$(gh api "repos/${REPO}/rulesets" \
-	--jq ".[] | select(.name == \"${RULESET_NAME}\") | .id")
+ruleset_ids=$(gh api "repos/${REPO}/rulesets" |
+	jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id')
 
 if [ -z "${ruleset_ids}" ]; then
 	echo "Error: ruleset '${RULESET_NAME}' not found in ${REPO}" >&2
@@ -95,6 +95,9 @@ gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name --jq '.[].name' >"${pr_
 checks_status=$?
 set -e
 
+# gh pr checks exits with code 8 when the PR has no checks (empty list).
+# This is not an error condition here — a PR with no checks simply produces an
+# empty file, which is handled correctly by the diff below.
 if [ "${checks_status}" -ne 0 ] && [ "${checks_status}" -ne 8 ]; then
 	echo "Error: failed to list checks for ${REPO}#${PR_NUMBER}" >&2
 	exit "${checks_status}"
