@@ -66,9 +66,9 @@ Windows and other platforms are not supported. The action exits with an error if
 |---|---|---|
 | `branch_name` | Branch name for the pull request | `gitignore-in` |
 | `base_branch` | Base branch for the pull request | repository default branch |
-| `commit_message` | Commit message for the `.gitignore` update | `Update .gitignore by gitignore.in` |
-| `pr_title` | Pull request title | `Update .gitignore` |
-| `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
+| `commit_message` | Commit message for the `.gitignore` update. Must be trusted single-line text without control characters. | `Update .gitignore by gitignore.in` |
+| `pr_title` | Pull request title. Must be trusted single-line text without control characters. | `Update .gitignore` |
+| `pr_body` | Pull request body. May contain Markdown and newlines, but callers must sanitize untrusted issue or pull request text before passing it. ASCII control characters other than tab, line feed, and carriage return are rejected. | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
 | `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). When set to the bundled default, the binary is verified against `bundled-binary.sha256`. For any other version, SHA-256 verification is skipped; intended for testing pre-release binaries only. | `v0.2.1` |
@@ -77,6 +77,17 @@ Windows and other platforms are not supported. The action exits with an error if
 > `snake_case` for historical reasons. The newer `gitignore-version` input uses `kebab-case` to
 > align with the outputs convention. A future major release will standardise all inputs to
 > `kebab-case`; until then, the table above shows the exact key names to use in `with:`.
+
+### Pull request metadata inputs
+
+The action passes `commit_message`, `pr_title`, and `pr_body` to
+`peter-evans/create-pull-request` when `.gitignore` has a meaningful change.
+Treat those values as trusted metadata.
+
+`commit_message` and `pr_title` must be single-line text with no ASCII control
+characters. `pr_body` may be multiline Markdown, but callers that derive it from
+issue titles, pull request titles, comments, or other user-controlled text must
+sanitize that content before passing it to this action.
 
 ### Pinning the boilerplates database
 

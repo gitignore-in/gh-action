@@ -22,18 +22,23 @@ inputs:
   commit_message:
     description: |
       Commit message for the .gitignore update.
+      Must be trusted single-line text without control characters.
       Default: Update .gitignore by gitignore.in
     required: false
     default: Update .gitignore by gitignore.in
   pr_title:
     description: |
       Pull request title.
+      Must be trusted single-line text without control characters.
       Default: Update .gitignore
     required: false
     default: Update .gitignore
   pr_body:
     description: |
       Pull request body.
+      May contain Markdown and newlines, but callers must not pass untrusted
+      issue or pull request text without sanitizing it first. ASCII control
+      characters other than tab, line feed, and carriage return are rejected.
       Default: Update .gitignore by gitignore.in
     required: false
     default: Update .gitignore by gitignore.in
@@ -163,6 +168,16 @@ runs:
         "${GITHUB_ACTION_PATH}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
       shell: bash
       working-directory: repository
+
+    - name: validate pull request metadata inputs
+      if: steps.check.outputs.changed == 'true'
+      run: |
+        "${GITHUB_ACTION_PATH}/scripts/validate-pull-request-metadata.sh"
+      shell: bash
+      env:
+        GITIGNORE_IN_COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        GITIGNORE_IN_PR_TITLE: ${{ inputs.pr_title }}
+        GITIGNORE_IN_PR_BODY: ${{ inputs.pr_body }}
 
     - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
       if: steps.check.outputs.changed == 'true'
