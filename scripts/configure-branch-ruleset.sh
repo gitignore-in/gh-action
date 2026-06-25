@@ -1,7 +1,7 @@
 #!/bin/sh
 # Apply required-status-checks to the default-branch-baseline ruleset.
 #
-# Usage: ./scripts/configure-branch-ruleset.sh [--dry-run]
+# Usage: ./scripts/configure-branch-ruleset.sh [--dry-run] [--repo owner/repo]
 #
 # Requires: gh CLI with admin token (repo scope).
 # The ruleset is identified by name; the script fetches its ID automatically.
@@ -13,13 +13,39 @@
 
 set -eu
 
-REPO="gitignore-in/gh-action"
+REPO="${GITHUB_REPOSITORY:-gitignore-in/gh-action}"
 RULESET_NAME="default-branch-baseline"
 DRY_RUN=false
 
-if [ "${1:-}" = "--dry-run" ]; then
-	DRY_RUN=true
-fi
+usage() {
+	echo "Usage: $0 [--dry-run] [--repo owner/repo]"
+}
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+	--dry-run)
+		DRY_RUN=true
+		shift
+		;;
+	--repo)
+		if [ "$#" -lt 2 ]; then
+			usage >&2
+			exit 2
+		fi
+		REPO="$2"
+		shift 2
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Error: unknown argument: $1" >&2
+		usage >&2
+		exit 2
+		;;
+	esac
+done
 
 ruleset_ids=$(gh api "repos/${REPO}/rulesets" |
 	jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id')
