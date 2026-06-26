@@ -149,7 +149,7 @@ runs:
       id: boilerplates_ref
       run: |
         boilerplates_dir="${HOME}/.gitignore-boilerplates"
-        if [ -d "${boilerplates_dir}/.git" ]; then
+        if git -C "${boilerplates_dir}" rev-parse --git-dir > /dev/null 2>&1; then
           ref=$(git -C "${boilerplates_dir}" rev-parse --verify HEAD)
         else
           ref=""
