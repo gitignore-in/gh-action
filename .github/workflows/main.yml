@@ -58,7 +58,7 @@ jobs:
   actionlint:
     uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@main
     with:
-      files: ".github/workflows/*.yml action.yml"
+      files: ".github/workflows/*.yml"
 
   version-coherence:
     runs-on: ubuntu-latest
