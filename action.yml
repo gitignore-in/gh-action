@@ -52,6 +52,13 @@ inputs:
       behaviour, non-deterministic).
     required: false
     default: ""
+  timeout_seconds:
+    description: |
+      Positive timeout in seconds for the gitignore.in generation step.
+      Lower this value for fail-fast workflows or raise it for slow runners.
+      Default: 300
+    required: false
+    default: "300"
   gitignore-version:
     description: |
       Version of the gitignore-in binary to download (e.g. v0.2.1).
@@ -141,8 +148,10 @@ runs:
 
     - name: run gitignore.in
       run: |
-        "${GITHUB_ACTION_PATH}/scripts/run-with-timeout.sh" 300 gitignore.in
+        "${GITHUB_ACTION_PATH}/scripts/run-with-timeout.sh" "${TIMEOUT_SECONDS}" gitignore.in
       shell: bash
+      env:
+        TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
       working-directory: repository
 
     - name: capture boilerplates ref
