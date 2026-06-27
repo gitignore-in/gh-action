@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Verify that the version referenced in action.yml matches every entry in
-# bundled-binary.sha256. When a Renovate PR updates only the version= line in
-# action.yml without regenerating bundled-binary.sha256, the download step fails
-# at workflow runtime because grep finds no matching checksum line.
+# bundled-binary.sha256. When a Renovate PR updates only the bundled_version=
+# line in action.yml without regenerating bundled-binary.sha256, the download
+# step fails at workflow runtime because grep finds no matching checksum line.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
