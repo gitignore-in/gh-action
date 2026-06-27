@@ -50,12 +50,15 @@ jobs:
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version: stable
-      - name: actionlint (workflow yml + composite action.yml inline shell)
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
       - name: shellcheck (scripts/*.sh)
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
           scandir: ./scripts
+
+  actionlint:
+    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@main
+    with:
+      files: ".github/workflows/*.yml action.yml"
 
   version-coherence:
     runs-on: ubuntu-latest
