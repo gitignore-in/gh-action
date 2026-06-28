@@ -56,7 +56,7 @@ jobs:
           scandir: ./scripts
 
   actionlint:
-    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@main
+    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@adba49e60c44a9f59bd2704f6dc9144a658bc76d # main
     with:
       files: ".github/workflows/*.yml"
 
