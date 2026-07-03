@@ -7,7 +7,7 @@
 # The ruleset is identified by name; the script fetches its ID automatically.
 #
 # Expected required checks (matching .github/workflows/*.yml job names):
-#   shell-format, check, shell-lint,
+#   shell-format, check, shell-lint, version-coherence,
 #   diff-detection (ubuntu-latest), diff-detection (macos-latest),
 #   test, test (boilerplates_ref passthrough), timeout helper
 
@@ -43,6 +43,7 @@ required_checks='[
   {"context":"shell-format"},
   {"context":"check"},
   {"context":"shell-lint"},
+  {"context":"version-coherence"},
   {"context":"diff-detection (ubuntu-latest)"},
   {"context":"diff-detection (macos-latest)"},
   {"context":"test"},

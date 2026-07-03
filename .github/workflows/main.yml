@@ -10,10 +10,12 @@ jobs:
   required-status-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Wait for the `test` aggregation gate: a `needs`-gated job does not register
-    # its status context until its dependencies finish, so this guard must run
-    # after it or it races and reports `test` as missing.
+    # Wait for required checks that can otherwise race this guard. The `test`
+    # aggregation gate does not register its status context until its
+    # dependencies finish, and `version-coherence` must be produced before the
+    # ruleset probe validates the configured required contexts.
     needs:
+      - version-coherence
       - test
     if: ${{ always() }}
     permissions:
