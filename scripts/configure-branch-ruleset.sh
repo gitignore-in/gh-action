@@ -9,7 +9,8 @@
 # Expected required checks (matching .github/workflows/*.yml job names):
 #   shell-format, check, shell-lint, version-coherence,
 #   diff-detection (ubuntu-latest), diff-detection (macos-latest),
-#   test, test (boilerplates_ref passthrough), timeout helper
+#   test, test (boilerplates_ref passthrough), timeout helper,
+#   version-coherence
 
 set -euo pipefail
 
@@ -48,7 +49,8 @@ required_checks='[
   {"context":"diff-detection (macos-latest)"},
   {"context":"test"},
   {"context":"test (boilerplates_ref passthrough)"},
-  {"context":"timeout helper"}
+  {"context":"timeout helper"},
+  {"context":"version-coherence"}
 ]'
 
 current_sorted=$(gh api "repos/${REPO}/rulesets/${ruleset_id}" |
