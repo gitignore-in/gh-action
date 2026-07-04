@@ -102,7 +102,8 @@ runs:
     - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32 # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
-    - run: "${GITHUB_ACTION_PATH}/scripts/install-gitignore-in.sh"
+    - run: |
+        "${GITHUB_ACTION_PATH}/scripts/install-gitignore-in.sh"
       env:
         GITIGNORE_IN_VERSION: ${{ inputs.gitignore-version }}
         GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION: ${{ inputs.allow-unverified-gitignore-version }}
