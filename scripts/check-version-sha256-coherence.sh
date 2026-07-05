@@ -15,10 +15,10 @@ sha256_file="${repo_root}/bundled-binary.sha256"
 action_version="$(grep -E '^\s+bundled_version="v[0-9]+\.[0-9]+\.[0-9]+"$' "${action_file}" | sed -E 's/.*bundled_version="(v[0-9]+\.[0-9]+\.[0-9]+)".*/\1/' || true)"
 if [ -z "${action_version}" ]; then
 	echo "ERROR: could not extract bundled_version= from ${action_file}" >&2
-	echo "       grep pattern: '^\s+bundled_version=\"v[0-9]+\.[0-9]+\.[0-9]+\"\$'" >&2
+	echo "       grep pattern: '^\s+bundled_version=\"v[0-9]+\.[0-9]+\.[0-9]+\"$'" >&2
 	exit 1
 fi
-echo "action.yml version: ${action_version}"
+echo "action.yml bundled_version: ${action_version}"
 
 total="$(grep -c . "${sha256_file}" || true)"
 if [ "${total}" -eq 0 ]; then
