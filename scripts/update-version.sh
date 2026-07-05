@@ -78,6 +78,7 @@ done
 staging_action="${tmpdir}/action.yml"
 sed -E \
 	-e "s/bundled_version=\"v[0-9]+\\.[0-9]+\\.[0-9]+\"/bundled_version=\"${version}\"/" \
+	-e "s/^(    default: )\"v[0-9]+\\.[0-9]+\\.[0-9]+\"$/\\1\"${version}\"/" \
 	"${action_file}" >"${staging_action}"
 if ! grep -qF "bundled_version=\"${version}\"" "${staging_action}"; then
 	echo "action.yml bundled_version= line did not update to ${version}" >&2
