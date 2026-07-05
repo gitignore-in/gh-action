@@ -98,7 +98,7 @@ runs:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - name: cache gitignore.in binary
       id: gitignore-in-cache
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: ${{ runner.temp }}/gitignore-in
         key: gitignore-in-${{ runner.os }}-${{ runner.arch }}-${{ inputs.gitignore-version }}-v1
