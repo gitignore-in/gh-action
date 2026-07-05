@@ -248,6 +248,7 @@ jobs:
       - uses: ./
         with:
           gitignore-version: v0.2.0
+          allow-unverified-gitignore-version: true
       - name: verify binary is accessible after action
         run: gitignore.in --version
 
