@@ -76,12 +76,18 @@ done
 # Stage the action.yml rewrite next to the new checksum file. We only swap
 # both into the repo after they have both been produced successfully.
 staging_action="${tmpdir}/action.yml"
-sed -E \
-	-e "s/bundled_version=\"v[0-9]+\\.[0-9]+\\.[0-9]+\"/bundled_version=\"${version}\"/" \
-	-e "s/^(    default: )\"v[0-9]+\\.[0-9]+\\.[0-9]+\"$/\\1\"${version}\"/" \
-	"${action_file}" >"${staging_action}"
-if ! grep -qF "bundled_version=\"${version}\"" "${staging_action}"; then
-	echo "action.yml bundled_version= line did not update to ${version}" >&2
+awk -v version="${version}" '
+	$1 == "gitignore-version:" { in_section = 1 }
+	in_section && $1 == "default:" {
+		sub(/"v[0-9]+\.[0-9]+\.[0-9]+"/, "\"" version "\"")
+		updated = 1
+		in_section = 0
+	}
+	{ print }
+	END { if (!updated) exit 1 }
+' "${action_file}" >"${staging_action}"
+if [ "$("${script_dir}/read-bundled-gitignore-version.sh" "${staging_action}")" != "${version}" ]; then
+	echo "action.yml gitignore-version default did not update to ${version}" >&2
 	exit 1
 fi
 

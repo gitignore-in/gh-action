@@ -225,6 +225,7 @@ jobs:
       - uses: ./
         with:
           gitignore-version: v0.2.0
+          allow-unverified-gitignore-version: true
       - name: verify binary is accessible after action
         run: gitignore.in --version
 
@@ -245,3 +246,6 @@ jobs:
 
       - name: uses exit 2 for update-version usage errors
         run: bash scripts/test-update-version-usage.sh
+
+      - name: install helper handles bundled and unverified versions
+        run: bash scripts/test-install-gitignore-in.sh

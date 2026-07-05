@@ -57,11 +57,17 @@ inputs:
       Version of the gitignore-in binary to download (e.g. v0.2.1).
       Defaults to the version bundled with this action release.
       When set to the bundled version, the download is verified against
-      bundled-binary.sha256. When overridden to another version, SHA-256
-      verification is skipped and a warning is printed; use only for
-      testing pre-release binaries.
+      bundled-binary.sha256. Custom versions require explicit opt-in via
+      allow-unverified-gitignore-version because SHA-256 verification is
+      otherwise enforced.
     required: false
     default: "v0.2.1"
+  allow-unverified-gitignore-version:
+    description: |
+      Allow a custom gitignore-version without SHA-256 verification.
+      Leave false to reject unverified custom versions.
+    required: false
+    default: "false"
 outputs:
   pull-request-number:
     description: Pull request number.
@@ -96,85 +102,11 @@ runs:
     - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32 # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
-    - name: cache gitignore.in binary
-      id: gitignore-in-cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-      with:
-        path: ${{ runner.temp }}/gitignore-in
-        key: gitignore-in-${{ runner.os }}-${{ runner.arch }}-${{ inputs.gitignore-version }}-v1
     - run: |
-        set -euo pipefail
-        tmpdir=$(mktemp -d)
-        trap 'rm -rf "${tmpdir}"' EXIT
-        cd "${tmpdir}"
-        version="${GITIGNORE_IN_VERSION}"
-        bundled_version="v0.2.1"
-        case "${RUNNER_OS}-${RUNNER_ARCH}" in
-          Linux-X64)
-            target="gitignore-in-x86_64-unknown-linux-gnu-${version}.tar.gz"
-            ;;
-          Linux-ARM64)
-            target="gitignore-in-aarch64-unknown-linux-gnu-${version}.tar.gz"
-            ;;
-          macOS-X64)
-            target="gitignore-in-x86_64-apple-darwin-${version}.tar.gz"
-            ;;
-          macOS-ARM64)
-            target="gitignore-in-aarch64-apple-darwin-${version}.tar.gz"
-            ;;
-          *)
-            echo "Unsupported runner platform: ${RUNNER_OS}-${RUNNER_ARCH}" >&2
-            exit 1
-            ;;
-        esac
-        cache_dir="${RUNNER_TEMP}/gitignore-in/${RUNNER_OS}-${RUNNER_ARCH}/${version}"
-        archive="${cache_dir}/${target}"
-        mkdir -p "${cache_dir}"
-        mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
-        url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
-        use_cached="false"
-        if [ -f "${archive}" ]; then
-          use_cached="true"
-          if [ "${version}" = "${bundled_version}" ]; then
-            expected=$(awk -v t="${target}" '$2 == t { print $1 }' "${GITHUB_ACTION_PATH}/bundled-binary.sha256")
-            if [ -z "${expected}" ]; then
-              echo "checksum for ${target} is not found in bundled-binary.sha256" >&2
-              exit 1
-            fi
-            actual=$(shasum -a 256 "${archive}" | awk "{print \$1}")
-            if [ "${expected}" != "${actual}" ]; then
-              echo "Cached archive checksum mismatch. Re-downloading." >&2
-              use_cached="false"
-              rm -f "${archive}"
-            fi
-          fi
-        fi
-        if [ "${use_cached}" != "true" ]; then
-          echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
-          wget --tries=3 --timeout=60 "${url}"
-          if [ "${version}" = "${bundled_version}" ]; then
-            expected=$(awk -v t="${target}" '$2 == t { print $1 }' "${GITHUB_ACTION_PATH}/bundled-binary.sha256")
-            if [ -z "${expected}" ]; then
-              echo "checksum for ${target} is not found in bundled-binary.sha256" >&2
-              exit 1
-            fi
-            downloaded=$(shasum -a 256 "${target}" | awk "{print \$1}")
-            if [ "${expected}" != "${downloaded}" ]; then
-              echo "downloaded binary checksum mismatch" >&2
-              exit 1
-            fi
-          else
-            echo "::warning::Custom gitignore-version '${version}' used; SHA-256 verification skipped. Only use for testing pre-release binaries." >&2
-          fi
-          mv "${target}" "${archive}"
-        else
-          echo "Using cached gitignore.in archive for ${version}." >&2
-        fi
-        tar -xzf "${archive}"
-        install -m 0755 gitignore.in "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
-        echo "${RUNNER_TEMP}/gitignore-in/bin" >> "${GITHUB_PATH}"
+        "${GITHUB_ACTION_PATH}/scripts/install-gitignore-in.sh"
       env:
         GITIGNORE_IN_VERSION: ${{ inputs.gitignore-version }}
+        GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION: ${{ inputs.allow-unverified-gitignore-version }}
       shell: bash
 
     - name: run gitignore.in

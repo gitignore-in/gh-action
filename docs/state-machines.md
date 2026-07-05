@@ -5,6 +5,51 @@ release drafts, release update preparation, and workflow concurrency. This
 document defines their boundaries so maintenance work does not rely on
 implicit behavior from third-party actions.
 
+## Download verification
+
+The composite action downloads the `gitignore.in` binary before generating a
+consumer `.gitignore`. The download path is controlled by the requested
+`gitignore-version` and by whether that version matches the action metadata
+default.
+
+States:
+
+- `verified-download`: the requested `gitignore-version` matches the bundled
+  version recorded in `action.yml`. The installer must verify the downloaded
+  archive against `bundled-binary.sha256` before extracting it.
+- `blocked-unverified-download`: the requested `gitignore-version` differs from
+  the bundled version and `allow-unverified-gitignore-version` is not `true`.
+  The installer must stop before downloading an archive whose checksum is not
+  tracked in this repository.
+- `unverified-download`: the requested `gitignore-version` differs from the
+  bundled version and `allow-unverified-gitignore-version=true`. The installer
+  may download and extract the archive, but it must emit a warning because no
+  repository-owned SHA-256 entry is available for that custom version.
+
+Boundary:
+
+- `scripts/install-gitignore-in.sh` owns this state machine.
+- `action.yml` is the single source of truth for the bundled version. The
+  installer reads the `gitignore-version` default from that metadata instead of
+  hard-coding the bundled version a second time.
+- `bundled-binary.sha256` is authoritative only for the bundled version.
+  Custom versions are intentionally treated as unverified unless the caller
+  opts in with `allow-unverified-gitignore-version=true`.
+- The unverified path is for pre-release or compatibility testing. Regular
+  consumers should use the default bundled version so downloads remain
+  checksum-verified.
+
+Recovery:
+
+- If a normal workflow reaches `blocked-unverified-download`, remove the custom
+  `gitignore-version` input or update it to the bundled version.
+- If a maintainer intentionally tests a custom version, set
+  `allow-unverified-gitignore-version=true` and treat the warning as an
+  explicit trust decision for that run.
+- If a release update changes the bundled version, update `action.yml` and
+  `bundled-binary.sha256` together so `verified-download` keeps matching the
+  checksum file.
+
 ## Consumer `.gitignore` pull request
 
 The composite action checks out the consumer repository, runs `gitignore.in`,
