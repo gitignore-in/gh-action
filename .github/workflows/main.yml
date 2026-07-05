@@ -10,10 +10,12 @@ jobs:
   required-status-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Wait for the `test` aggregation gate: a `needs`-gated job does not register
-    # its status context until its dependencies finish, so this guard must run
-    # after it or it races and reports `test` as missing.
+    # Wait for required checks that can otherwise race this guard. The `test`
+    # aggregation gate does not register its status context until its
+    # dependencies finish, and `version-coherence` must be produced before the
+    # ruleset probe validates the configured required contexts.
     needs:
+      - version-coherence
       - test
     if: ${{ always() }}
     permissions:
@@ -50,12 +52,21 @@ jobs:
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version: stable
-      - name: actionlint (workflow yml + composite action.yml inline shell)
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
       - name: shellcheck (scripts/*.sh)
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
           scandir: ./scripts
+      - name: extract action.yml run blocks
+        run: ruby scripts/extract-action-yml-run-blocks.rb action.yml .tmp/action-yml-shell
+      - name: shellcheck (action.yml run blocks)
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          scandir: ./.tmp/action-yml-shell
+
+  actionlint:
+    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@adba49e60c44a9f59bd2704f6dc9144a658bc76d # main
+    with:
+      files: ".github/workflows/*.yml"
 
   version-coherence:
     runs-on: ubuntu-latest
@@ -63,7 +74,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - name: action.yml and bundled-binary.sha256 are coherent
         run: scripts/check-version-sha256-coherence.sh
 
@@ -254,6 +265,9 @@ jobs:
 
       - name: stops command group when wrapper receives SIGTERM
         run: bash scripts/test-run-with-timeout-signals.sh
+
+      - name: exercises branch ruleset configuration lookup
+        run: bash scripts/test-configure-branch-ruleset.sh
 
       - name: uses exit 2 for update-version usage errors
         run: bash scripts/test-update-version-usage.sh

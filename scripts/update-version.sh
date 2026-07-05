@@ -77,10 +77,11 @@ done
 # both into the repo after they have both been produced successfully.
 staging_action="${tmpdir}/action.yml"
 sed -E \
-	-e "s/version=v[0-9]+\\.[0-9]+\\.[0-9]+$/version=${version}/" \
+	-e "s/bundled_version=\"v[0-9]+\\.[0-9]+\\.[0-9]+\"/bundled_version=\"${version}\"/" \
+	-e "s/^(    default: )\"v[0-9]+\\.[0-9]+\\.[0-9]+\"$/\\1\"${version}\"/" \
 	"${action_file}" >"${staging_action}"
-if ! grep -qF "version=${version}" "${staging_action}"; then
-	echo "action.yml version= line did not update to ${version}" >&2
+if ! grep -qF "bundled_version=\"${version}\"" "${staging_action}"; then
+	echo "action.yml bundled_version= line did not update to ${version}" >&2
 	exit 1
 fi
 
