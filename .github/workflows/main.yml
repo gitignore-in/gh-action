@@ -236,6 +236,21 @@ jobs:
         with:
           boilerplates_ref: main
 
+  example-custom-gitignore-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: test (custom gitignore-version)
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: ./
+        with:
+          gitignore-version: v0.2.0
+      - name: verify binary is accessible after action
+        run: gitignore.in --version
+
   timeout-helper:
     runs-on: ubuntu-latest
     timeout-minutes: 5
