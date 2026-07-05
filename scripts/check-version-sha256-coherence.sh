@@ -12,14 +12,8 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 action_file="${repo_root}/action.yml"
 sha256_file="${repo_root}/bundled-binary.sha256"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 action_version="$("${script_dir}/read-bundled-gitignore-version.sh" "${action_file}")"
 echo "action.yml version: ${action_version}"
-=======
-action_version="$("${script_dir}/read-bundled-gitignore-version.sh" "${action_file}")"
-echo "action.yml version: ${action_version}"
->>>>>>> 3a53cbc (Use action metadata as bundled version source)
 
 total="$(grep -c . "${sha256_file}" || true)"
 if [ "${total}" -eq 0 ]; then
