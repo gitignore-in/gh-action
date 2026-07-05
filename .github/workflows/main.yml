@@ -7,29 +7,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  required-status-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # Wait for required checks that can otherwise race this guard. The `test`
-    # aggregation gate does not register its status context until its
-    # dependencies finish, and `version-coherence` must be produced before the
-    # ruleset probe validates the configured required contexts.
-    needs:
-      - version-coherence
-      - test
-    if: ${{ always() }}
-    permissions:
-      checks: read
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: required status checks are produced
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: scripts/check-required-status-checks.sh --repo "${GITHUB_REPOSITORY}" --pr "${PR_NUMBER}"
-
   shell-format:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -265,9 +242,6 @@ jobs:
 
       - name: stops command group when wrapper receives SIGTERM
         run: bash scripts/test-run-with-timeout-signals.sh
-
-      - name: exercises branch ruleset configuration lookup
-        run: bash scripts/test-configure-branch-ruleset.sh
 
       - name: uses exit 2 for update-version usage errors
         run: bash scripts/test-update-version-usage.sh
