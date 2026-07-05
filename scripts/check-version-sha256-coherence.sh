@@ -12,7 +12,7 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 action_file="${repo_root}/action.yml"
 sha256_file="${repo_root}/bundled-binary.sha256"
 
-action_version="$(grep -E '^\s+bundled_version="v[0-9]+\.[0-9]+\.[0-9]+"$' "${action_file}" | sed -E 's/.*bundled_version="(v[0-9]+\.[0-9]+\.[0-9]+)".*/\1/' || true)"
+action_version="$(grep -E '^\s+bundled_version="v[0-9]+\.[0-9]+\.[0-9]+"$' "${action_file}" | sed -E 's/.*bundled_version="(v[0-9]+\.[0-9]+\.[0-9]+)".*/\1/')"
 if [ -z "${action_version}" ]; then
 	echo "ERROR: could not extract bundled_version= from ${action_file}" >&2
 	echo "       grep pattern: '^\s+bundled_version=\"v[0-9]+\.[0-9]+\.[0-9]+\"$'" >&2

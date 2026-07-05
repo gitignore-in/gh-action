@@ -17,8 +17,9 @@ for arg in "$@"; do
 		;;
 	esac
 done
+expected_rulesets_path="repos/${GH_EXPECT_REPO:-gitignore-in/gh-action}/rulesets"
 case "${path}" in
-*/rulesets)
+"${expected_rulesets_path}")
 	# Ruleset list: returned as a JSON array, matching the GitHub API shape.
 	case "${GH_MOCK_RULESETS:-single}" in
 	single)
@@ -51,6 +52,10 @@ case "${path}" in
 	# so the script reports that an update is needed.
 	printf '%s\n' '{"rules":[{"type":"required_status_checks","parameters":{"required_status_checks":[]}}]}'
 	;;
+*)
+	echo "unexpected gh api path: ${path}; expected ${expected_rulesets_path}" >&2
+	exit 2
+	;;
 esac
 SCRIPT
 chmod +x "${tmpdir}/gh"
@@ -58,6 +63,19 @@ chmod +x "${tmpdir}/gh"
 output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --dry-run 2>&1)
 printf '%s\n' "${output}" | grep 'Dry run: would update required_status_checks in ruleset 123'
 printf '%s\n' "${output}" | grep '"context":"version-coherence"'
+
+output=$(PATH="${tmpdir}:${PATH}" GITHUB_REPOSITORY=example/fork GH_EXPECT_REPO=example/fork GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --dry-run 2>&1)
+printf '%s\n' "${output}" | grep 'Dry run: would update required_status_checks in ruleset 123'
+
+output=$(PATH="${tmpdir}:${PATH}" GH_EXPECT_REPO=example/fork GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --repo example/fork --dry-run 2>&1)
+printf '%s\n' "${output}" | grep 'Dry run: would update required_status_checks in ruleset 123'
+
+set +e
+output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=single scripts/configure-branch-ruleset.sh --repo 2>&1)
+status=$?
+set -e
+[ "${status}" -eq 2 ]
+printf '%s\n' "${output}" | grep 'Usage:'
 
 set +e
 output=$(PATH="${tmpdir}:${PATH}" GH_MOCK_RULESETS=none scripts/configure-branch-ruleset.sh --dry-run 2>&1)
