@@ -56,16 +56,15 @@ inputs:
     description: |
       Version of the gitignore-in binary to download (e.g. v0.2.1).
       Defaults to the version bundled with this action release.
-      When set to the bundled version, the download is verified against
-      bundled-binary.sha256. Custom versions require explicit opt-in via
-      allow-unverified-gitignore-version because SHA-256 verification is
-      otherwise enforced.
-    required: false
-    default: "v0.2.1"
+      This input selects the release artifact only; checksum policy is
+      controlled separately by allow-unverified-gitignore-version.
+  required: false
+  default: "v0.2.1"
   allow-unverified-gitignore-version:
     description: |
       Allow a custom gitignore-version without SHA-256 verification.
-      Leave false to reject unverified custom versions.
+      Leave false to reject unverified custom versions and keep the bundled
+      release checksum-verified.
     required: false
     default: "false"
   timeout_seconds:
