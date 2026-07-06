@@ -73,6 +73,7 @@ Windows and other platforms are not supported. The action exits with an error if
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
 | `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). When set to the bundled default, the binary is verified against `bundled-binary.sha256`. Custom versions require explicit opt-in. | `v0.2.1` |
 | `allow-unverified-gitignore-version` | Allow a custom `gitignore-version` without SHA-256 verification. Leave this disabled unless you are intentionally testing a pre-release binary. | `false` |
+| `timeout_seconds` | Positive timeout in seconds for the `gitignore.in` generation step. Lower this value for fail-fast workflows or raise it for slow runners. | `300` |
 
 > **Note on input naming:** The existing inputs above (`branch_name`, `base_branch`, etc.) use
 > `snake_case` for historical reasons. The newer `gitignore-version` input uses `kebab-case` to
@@ -91,6 +92,18 @@ To produce reproducible `.gitignore` output, pass a specific commit SHA:
 - uses: gitignore-in/gh-action@main
   with:
     boilerplates_ref: "abc1234"  # SHA from github.com/toptal/gitignore
+```
+
+### Adjusting the generation timeout
+
+The `gitignore.in` generation step times out after 300 seconds by default.
+Tune the value when a runner needs a shorter fail-fast limit or more time to
+fetch and render large templates:
+
+```yaml
+- uses: gitignore-in/gh-action@main
+  with:
+    timeout_seconds: "120"
 ```
 
 ## Outputs
