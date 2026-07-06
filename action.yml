@@ -59,14 +59,14 @@ inputs:
       This input selects the release artifact only; checksum policy is
       controlled separately by allow-unverified-gitignore-version.
     required: false
-    default: !!str v0.2.1
+    default: "v0.2.1"
   allow-unverified-gitignore-version:
     description: |
       Allow a custom gitignore-version without SHA-256 verification.
       Leave false to reject unverified custom versions and keep the bundled
       release checksum-verified.
     required: false
-    default: !!str false
+    default: "false"
   timeout_seconds:
     description: |
       Positive timeout in seconds for the gitignore.in generation step.
