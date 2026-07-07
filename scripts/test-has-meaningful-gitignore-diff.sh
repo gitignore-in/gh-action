@@ -35,10 +35,16 @@ run_tracked_case() {
 }
 
 run_tracked_case \
-	"leading whitespace-only pattern diff is ignored" \
-	false \
+	"leading whitespace change is meaningful" \
+	true \
 	$'node_modules/\n.env\n' \
 	$'node_modules/\n  .env\n'
+
+run_tracked_case \
+	"literal hash pattern change is meaningful" \
+	true \
+	$'node_modules/\n.env\n' \
+	$'node_modules/\n\\#build\n'
 
 run_tracked_case \
 	"changed pattern is meaningful" \
