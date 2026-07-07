@@ -71,8 +71,8 @@ Windows and other platforms are not supported. The action exits with an error if
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
-| `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). When set to the bundled default, the binary is verified against `bundled-binary.sha256`. Custom versions require explicit opt-in. | `v0.2.1` |
-| `allow-unverified-gitignore-version` | Allow a custom `gitignore-version` without SHA-256 verification. Leave this disabled unless you are intentionally testing a pre-release binary. | `false` |
+| `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). This input selects the release artifact only. | `v0.2.1` |
+| `allow-unverified-gitignore-version` | Checksum policy for non-bundled `gitignore-version` values. Leave this disabled unless you are intentionally testing a pre-release binary. | `false` |
 | `timeout_seconds` | Positive timeout in seconds for the `gitignore.in` generation step. Lower this value for fail-fast workflows or raise it for slow runners. | `300` |
 
 > **Note on input naming:** The existing inputs above (`branch_name`, `base_branch`, etc.) use
@@ -81,7 +81,7 @@ Windows and other platforms are not supported. The action exits with an error if
 > `kebab-case`; until then, the table above shows the exact key names to use in `with:`.
 >
 > If you override `gitignore-version`, set `allow-unverified-gitignore-version: "true"` to opt in
-> to the unverified download path.
+> to the unverified download path. The version selector and checksum policy are separate inputs.
 
 ### Pinning the boilerplates database
 

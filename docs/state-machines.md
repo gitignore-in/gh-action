@@ -8,9 +8,9 @@ implicit behavior from third-party actions.
 ## Download verification
 
 The composite action downloads the `gitignore.in` binary before generating a
-consumer `.gitignore`. The download path is controlled by the requested
-`gitignore-version` and by whether that version matches the action metadata
-default.
+consumer `.gitignore`. The requested `gitignore-version` selects the release
+artifact, and `allow-unverified-gitignore-version` separately decides whether a
+non-bundled version may skip repository-owned checksum verification.
 
 States:
 
