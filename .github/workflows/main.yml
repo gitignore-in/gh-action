@@ -254,3 +254,6 @@ jobs:
 
       - name: install helper handles bundled and unverified versions
         run: bash scripts/test-install-gitignore-in.sh
+
+      - name: pull request permissions helper fails fast when token cannot write
+        run: bash scripts/test-check-create-pull-request-permissions.sh

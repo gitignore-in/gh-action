@@ -9,7 +9,8 @@ as part of the action. Renaming or moving them is a breaking change.
 
 | Script | Purpose |
 | --- | --- |
-| `has-meaningful-gitignore-diff.sh` | Determines whether a `.gitignore` diff contains meaningful changes while ignoring only end-of-line whitespace |
+| `check-create-pull-request-permissions.sh` | Fails fast when the Actions token cannot write repository contents and pull requests |
+| `has-meaningful-gitignore-diff.sh` | Determines whether a `.gitignore` diff contains meaningful changes (ignoring comment-only lines) |
 | `run-with-timeout.sh` | Runs a command with a timeout, forwarding signals for clean shutdown |
 
 ## Development tooling

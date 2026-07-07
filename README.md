@@ -36,6 +36,7 @@ steps:
 ```
 
 > **Note:** Repositories whose default token permissions are set to read-only (common in organizations) must declare `contents: write` and `pull-requests: write` explicitly. The action uses `github.token` to create the pull request via `peter-evans/create-pull-request`, so without these permissions the PR step will fail silently.
+> The action now checks those permissions before creating the PR and stops with a clear error if they are missing.
 
 For production use, pin to a specific tag or SHA to avoid unexpected changes:
 
