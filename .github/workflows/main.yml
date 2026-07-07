@@ -184,10 +184,13 @@ jobs:
 
   # Aggregation gate that produces the bare `test` status context required by
   # the `default-branch-baseline` ruleset. The platform matrix above reports as
-  # `test (ubuntu-latest)` / `test (macos-latest)`, so this job re-exposes a
-  # single `test` context that is green only when every matrix leg succeeds.
+  # `test (ubuntu-latest)` / `test (macos-latest)`, and `version-coherence`
+  # is a separate required signal, so this job re-exposes a single `test`
+  # context that is green only when every matrix leg and the coherence check
+  # succeed.
   test:
     needs:
+      - version-coherence
       - example
     if: ${{ always() }}
     runs-on: ubuntu-latest
@@ -197,7 +200,9 @@ jobs:
     steps:
       - name: example matrix succeeded on all platforms
         run: |
+          coherence_result='${{ needs.version-coherence.result }}'
           result='${{ needs.example.result }}'
+          test "${coherence_result}" = success
           test "${result}" = success
 
   example-pinned-boilerplates:
