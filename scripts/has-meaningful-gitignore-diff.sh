@@ -14,8 +14,33 @@ if ! git diff --name-only -- "${target}" | grep -q .; then
 	exit 0
 fi
 
-if git diff --ignore-space-at-eol --quiet -- "${target}"; then
-	echo "changed=false" >>"${GITHUB_OUTPUT:-/dev/stdout}"
-else
+if git diff --ignore-space-at-eol -- "${target}" |
+	awk '
+		/^diff --git / { in_hunk = 0; next }
+		/^@@ / { in_hunk = 1; next }
+		in_hunk && /^[+-]/ {
+			sign = substr($0, 1, 1)
+			content = substr($0, 2)
+			if (content ~ /^[[:space:]]*($|#)/) {
+				next
+			}
+			keys[content] = 1
+			if (sign == "-") {
+				removed[content]++
+			} else {
+				added[content]++
+			}
+		}
+		END {
+			for (content in keys) {
+				if (removed[content] != added[content]) {
+					found = 1
+				}
+			}
+			exit found ? 0 : 1
+		}
+	'; then
 	echo "changed=true" >>"${GITHUB_OUTPUT:-/dev/stdout}"
+else
+	echo "changed=false" >>"${GITHUB_OUTPUT:-/dev/stdout}"
 fi
