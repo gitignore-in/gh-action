@@ -54,7 +54,14 @@ echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
 wget --tries=3 --timeout=60 "${url}"
 
 if [ "${version}" = "${bundled_version}" ]; then
-	grep -F "  ${target}" "${repo_root}/bundled-binary.sha256" >"${target}.sha256"
+	if ! grep -F "  ${target}" "${repo_root}/bundled-binary.sha256" >"${target}.sha256"; then
+		echo "::error::No checksum entry found for '  ${target}' in bundled-binary.sha256" >&2
+		echo "  repo_root=${repo_root}" >&2
+		echo "  target=${target}" >&2
+		printf "  bundled-binary.sha256 contents:\n" >&2
+		cat "${repo_root}/bundled-binary.sha256" >&2
+		exit 1
+	fi
 	shasum -a 256 -c "${target}.sha256"
 else
 	echo "::warning::Custom gitignore-version '${version}' used; SHA-256 verification skipped because allow-unverified-gitignore-version=true. Only use for testing pre-release binaries." >&2
