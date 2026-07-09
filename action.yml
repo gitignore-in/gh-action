@@ -136,6 +136,14 @@ runs:
       shell: bash
       working-directory: repository
 
+    - name: preflight pull request permissions
+      if: steps.check.outputs.changed == 'true'
+      run: |
+        "${GITHUB_ACTION_PATH}/scripts/check-create-pull-request-permissions.sh"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
     - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
       if: steps.check.outputs.changed == 'true'
       id: create_pull_request
