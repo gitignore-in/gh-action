@@ -21,14 +21,14 @@ if git diff --ignore-space-at-eol -- "${target}" |
 		in_hunk && /^[+-]/ {
 			sign = substr($0, 1, 1)
 			content = substr($0, 2)
-			sub(/^[[:space:]]+/, "", content)
-			if (content !~ /^(#|$)/) {
-				keys[content] = 1
-				if (sign == "-") {
-					removed[content]++
-				} else {
-					added[content]++
-				}
+			if (content ~ /^[[:space:]]*($|#)/) {
+				next
+			}
+			keys[content] = 1
+			if (sign == "-") {
+				removed[content]++
+			} else {
+				added[content]++
 			}
 		}
 		END {

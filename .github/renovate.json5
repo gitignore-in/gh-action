@@ -18,21 +18,10 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^\\.github/workflows/.*\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "go run (?<depName>github\\.com/rhysd/actionlint)/cmd/actionlint@(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
-      ],
-      "datasourceTemplate": "go",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
         "/^action\\.yml$/"
       ],
       "matchStrings": [
-        "version=(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\n"
+        "gitignore-version:\\n(?:    [^\\n]+\\n)*    default: \"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "gitignore-in/gitignore-in",
       "datasourceTemplate": "github-releases"
