@@ -4,12 +4,12 @@ set -euo pipefail
 version="${1:-${GITIGNORE_IN_VERSION:-}}"
 if [ -z "${version}" ]; then
 	echo "usage: $0 <version>" >&2
-	exit 1
+	exit 2
 fi
 
 if ! [[ "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 	echo "version must use vMAJOR.MINOR.PATCH format: ${version}" >&2
-	exit 1
+	exit 2
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -76,11 +76,18 @@ done
 # Stage the action.yml rewrite next to the new checksum file. We only swap
 # both into the repo after they have both been produced successfully.
 staging_action="${tmpdir}/action.yml"
-sed -E \
-	-e "s/version=v[0-9]+\\.[0-9]+\\.[0-9]+$/version=${version}/" \
-	"${action_file}" >"${staging_action}"
-if ! grep -qF "version=${version}" "${staging_action}"; then
-	echo "action.yml version= line did not update to ${version}" >&2
+awk -v version="${version}" '
+	$1 == "gitignore-version:" { in_section = 1 }
+	in_section && $1 == "default:" {
+		sub(/"v[0-9]+\.[0-9]+\.[0-9]+"/, "\"" version "\"")
+		updated = 1
+		in_section = 0
+	}
+	{ print }
+	END { if (!updated) exit 1 }
+' "${action_file}" >"${staging_action}"
+if [ "$("${script_dir}/read-bundled-gitignore-version.sh" "${staging_action}")" != "${version}" ]; then
+	echo "action.yml gitignore-version default did not update to ${version}" >&2
 	exit 1
 fi
 

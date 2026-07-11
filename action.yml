@@ -16,9 +16,9 @@ inputs:
   base_branch:
     description: |
       Base branch name to create pull request.
-      Default: main
+      Leave empty to use the repository's default branch.
     required: false
-    default: main
+    default: ""
   commit_message:
     description: |
       Commit message for the .gitignore update.
@@ -48,10 +48,33 @@ inputs:
       Optional git ref (branch, tag, or full SHA) for the gitignore boilerplates
       database (github.com/toptal/gitignore). When set, the boilerplates database
       is checked out at this ref after the update, making .gitignore generation
-      reproducible across runs. Leave empty to use the latest commit (default
-      behaviour, non-deterministic).
+      reproducible across runs and recording that pinned commit SHA in generated
+      pull request bodies. Leave empty to use the latest commit (default
+      behaviour, non-deterministic); the action warns when this input is omitted.
     required: false
     default: ""
+  gitignore-version:
+    description: |
+      Version of the gitignore-in binary to download (e.g. v0.2.1).
+      Defaults to the version bundled with this action release.
+      This input selects the release artifact only; checksum policy is
+      controlled separately by allow-unverified-gitignore-version.
+    required: false
+    default: "v0.2.1"
+  allow-unverified-gitignore-version:
+    description: |
+      Allow a custom gitignore-version without SHA-256 verification.
+      Leave false to reject unverified custom versions and keep the bundled
+      release checksum-verified.
+    required: false
+    default: "false"
+  timeout_seconds:
+    description: |
+      Positive timeout in seconds for the gitignore.in generation step.
+      Lower this value for fail-fast workflows or raise it for slow runners.
+      Default: 300
+    required: false
+    default: "300"
 outputs:
   pull-request-number:
     description: Pull request number.
@@ -77,67 +100,59 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       with:
         fetch-depth: 0
-        ref: ${{ inputs.base_branch }}
+        ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
-    - uses: gitignore-in/install-gibo@9e7dba9e59f184b41f542669b0864687a6f69b45 # v0.1.0
+    - uses: gitignore-in/install-gibo@190df5cc5be7f64b8364a04f9c84e2cfa7b1cd32 # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
+    - name: warn when boilerplates_ref is not set
+      if: inputs.boilerplates_ref == ''
+      run: |
+        echo "::warning::boilerplates_ref is not set; generated pull requests will record the latest boilerplates database commit SHA, but the generated .gitignore may vary between runs."
+      shell: bash
     - run: |
-        set -euo pipefail
-        tmpdir=$(mktemp -d)
-        trap 'rm -rf "${tmpdir}"' EXIT
-        cd "${tmpdir}"
-        version=v0.2.1
-        case "${RUNNER_OS}-${RUNNER_ARCH}" in
-          Linux-X64)
-            target="gitignore-in-x86_64-unknown-linux-gnu-${version}.tar.gz"
-            ;;
-          Linux-ARM64)
-            target="gitignore-in-aarch64-unknown-linux-gnu-${version}.tar.gz"
-            ;;
-          macOS-X64)
-            target="gitignore-in-x86_64-apple-darwin-${version}.tar.gz"
-            ;;
-          macOS-ARM64)
-            target="gitignore-in-aarch64-apple-darwin-${version}.tar.gz"
-            ;;
-          *)
-            echo "Unsupported runner platform: ${RUNNER_OS}-${RUNNER_ARCH}" >&2
-            exit 1
-            ;;
-        esac
-        url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
-        echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
-        wget --tries=3 --timeout=60 "${url}"
-        grep -F "  ${target}" "${GITHUB_ACTION_PATH}/bundled-binary.sha256" > "${target}.sha256"
-        shasum -a 256 -c "${target}.sha256"
-        tar -xzf "${target}"
-        mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
-        install -m 0755 gitignore.in "${tmpdir}/gitignore.in.installed"
-        mv "${tmpdir}/gitignore.in.installed" "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
-        echo "${RUNNER_TEMP}/gitignore-in/bin" >> "${GITHUB_PATH}"
+        "${GITHUB_ACTION_PATH}/scripts/install-gitignore-in.sh"
+      env:
+        GITIGNORE_IN_VERSION: ${{ inputs.gitignore-version }}
+        GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION: ${{ inputs.allow-unverified-gitignore-version }}
       shell: bash
 
     - name: run gitignore.in
       run: |
-        "${GITHUB_ACTION_PATH}/scripts/run-with-timeout.sh" 300 gitignore.in
+        "${GITHUB_ACTION_PATH}/scripts/run-with-timeout.sh" "${TIMEOUT_SECONDS}" gitignore.in
       shell: bash
+      env:
+        TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
       working-directory: repository
 
     - name: capture boilerplates ref
       id: boilerplates_ref
       run: |
-        boilerplates_dir="${HOME}/.gitignore-boilerplates"
-        if [ -d "${boilerplates_dir}/.git" ]; then
-          ref=$(git -C "${boilerplates_dir}" rev-parse --verify HEAD)
-        else
-          ref=""
-        fi
-        echo "boilerplates-ref=${ref}" >> "${GITHUB_OUTPUT}"
+        "${GITHUB_ACTION_PATH}/scripts/capture-boilerplates-ref.sh"
+      shell: bash
+
+    - name: compose pull request body
+      id: pr_body
+      env:
+        INPUT_PR_BODY: ${{ inputs.pr_body }}
+        BOILERPLATES_REF: ${{ steps.boilerplates_ref.outputs.boilerplates-ref }}
+      run: |
+        body_file="${RUNNER_TEMP}/gitignore-in-pr-body.md"
+        {
+          if [ -n "${INPUT_PR_BODY}" ]; then
+            printf '%s\n\n' "${INPUT_PR_BODY}"
+          fi
+          if [ -n "${BOILERPLATES_REF}" ]; then
+            printf 'Boilerplates database commit SHA: %s\n' "${BOILERPLATES_REF}"
+          else
+            printf 'Boilerplates database commit SHA: unavailable\n'
+          fi
+        } >"${body_file}"
+        echo "body-path=${body_file}" >> "${GITHUB_OUTPUT}"
       shell: bash
 
     - name: check .gitignore
@@ -147,16 +162,24 @@ runs:
       shell: bash
       working-directory: repository
 
+    - name: preflight pull request permissions
+      if: steps.check.outputs.changed == 'true'
+      run: |
+        "${GITHUB_ACTION_PATH}/scripts/check-create-pull-request-permissions.sh"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
     - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
       if: steps.check.outputs.changed == 'true'
       id: create_pull_request
       with:
         branch: ${{ inputs.branch_name }}
-        base: ${{ inputs.base_branch }}
+        base: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
         commit-message: ${{ inputs.commit_message }}
         delete-branch: ${{ inputs.delete_branch }}
         title: ${{ inputs.pr_title }}
-        body: ${{ inputs.pr_body }}
+        body-path: ${{ steps.pr_body.outputs.body-path }}
       env:
         GH_TOKEN: ${{ github.token }}

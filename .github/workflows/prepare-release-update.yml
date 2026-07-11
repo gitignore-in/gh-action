@@ -22,19 +22,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   resolve:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       mode: ${{ steps.resolve.outputs.mode }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Resolve released version
         id: resolve
@@ -69,8 +67,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: resolve
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Verify released version exists
         env:
@@ -86,7 +86,7 @@ jobs:
       - name: Download bundled release artifact
         run: |
           set -euo pipefail
-          version="$(grep -E '^[[:space:]]*version=v[0-9]+\.[0-9]+\.[0-9]+$' action.yml | head -n1 | cut -d= -f2)"
+          version="$(scripts/read-bundled-gitignore-version.sh action.yml)"
           target="gitignore-in-x86_64-unknown-linux-gnu-${version}.tar.gz"
           url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
           echo "Downloading ${url}" >&2
@@ -108,8 +108,11 @@ jobs:
     timeout-minutes: 10
     needs: [resolve, validate]
     if: ${{ needs.resolve.outputs.mode != 'dry-run' }}
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Update bundled gitignore.in version
         env:

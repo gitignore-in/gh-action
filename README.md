@@ -1,7 +1,9 @@
 # GitHub Action for gitignore-in
 
+[![CI](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml/badge.svg)](https://github.com/gitignore-in/gh-action/actions/workflows/main.yml)
+
 gitignore-in is a tool to generate .gitignore files from templates.
-This action runs gitignore-in and commits the result to the repository.
+This action runs gitignore-in and creates a pull request if the `.gitignore` file has changed.
 
 ## Example
 
@@ -25,14 +27,23 @@ If the .gitignore.in is changed, the action will create pull request automatical
 ## Usage
 
 ```yaml
+permissions:
+  contents: write       # needed to push the updated .gitignore to the PR branch
+  pull-requests: write  # needed to open and update the pull request
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@main
 ```
 
+> **Note:** Repositories whose default token permissions are set to read-only (common in organizations) must declare `contents: write` and `pull-requests: write` explicitly. The action uses `github.token` to create the pull request via `peter-evans/create-pull-request`, so without these permissions the PR step will fail silently.
+> The action now checks those permissions before creating the PR and stops with a clear error if they are missing.
+
 For production use, pin to a specific tag or SHA to avoid unexpected changes:
 
 ```yaml
+permissions:
+  contents: write
+  pull-requests: write
 steps:
 - uses: actions/checkout@v4
 - uses: gitignore-in/gh-action@v0.2.3  # or pin to a full SHA
@@ -55,12 +66,23 @@ Windows and other platforms are not supported. The action exits with an error if
 | Input | Description | Default |
 |---|---|---|
 | `branch_name` | Branch name for the pull request | `gitignore-in` |
-| `base_branch` | Base branch for the pull request | `main` |
+| `base_branch` | Base branch for the pull request | repository default branch |
 | `commit_message` | Commit message for the `.gitignore` update | `Update .gitignore by gitignore.in` |
 | `pr_title` | Pull request title | `Update .gitignore` |
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
+| `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). This input selects the release artifact only. | `v0.2.1` |
+| `allow-unverified-gitignore-version` | Checksum policy for non-bundled `gitignore-version` values. Leave this disabled unless you are intentionally testing a pre-release binary. | `false` |
+| `timeout_seconds` | Positive timeout in seconds for the `gitignore.in` generation step. Lower this value for fail-fast workflows or raise it for slow runners. | `300` |
+
+> **Note on input naming:** The existing inputs above (`branch_name`, `base_branch`, etc.) use
+> `snake_case` for historical reasons. The newer `gitignore-version` input uses `kebab-case` to
+> align with the outputs convention. A future major release will standardise all inputs to
+> `kebab-case`; until then, the table above shows the exact key names to use in `with:`.
+>
+> If you override `gitignore-version`, set `allow-unverified-gitignore-version: "true"` to opt in
+> to the unverified download path. The version selector and checksum policy are separate inputs.
 
 ### Pinning the boilerplates database
 
@@ -71,6 +93,23 @@ To produce reproducible `.gitignore` output, pass a specific commit SHA:
 - uses: gitignore-in/gh-action@main
   with:
     boilerplates_ref: "abc1234"  # SHA from github.com/toptal/gitignore
+```
+
+When `boilerplates_ref` is omitted, the action warns that the boilerplates
+database will follow the latest commit on each run. In all cases, generated
+PR bodies include the boilerplates database commit SHA used for that run so the
+provenance is visible in the pull request.
+
+### Adjusting the generation timeout
+
+The `gitignore.in` generation step times out after 300 seconds by default.
+Tune the value when a runner needs a shorter fail-fast limit or more time to
+fetch and render large templates:
+
+```yaml
+- uses: gitignore-in/gh-action
+  with:
+    timeout_seconds: "120"
 ```
 
 ## Outputs

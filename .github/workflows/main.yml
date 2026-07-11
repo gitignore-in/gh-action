@@ -7,28 +7,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  required-status-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      checks: read
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: required status checks are produced
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: scripts/check-required-status-checks.sh --repo "${GITHUB_REPOSITORY}" --pr "${PR_NUMBER}"
-
   shell-format:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version: stable
@@ -40,16 +25,35 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version: stable
-      - name: actionlint (workflow yml + composite action.yml inline shell)
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
       - name: shellcheck (scripts/*.sh)
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
           scandir: ./scripts
+      - name: extract action.yml run blocks
+        run: ruby scripts/extract-action-yml-run-blocks.rb action.yml .tmp/action-yml-shell
+      - name: shellcheck (action.yml run blocks)
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          scandir: ./.tmp/action-yml-shell
+
+  actionlint:
+    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@adba49e60c44a9f59bd2704f6dc9144a658bc76d # main
+    with:
+      files: ".github/workflows/*.yml"
+
+  version-coherence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: action.yml and bundled-binary.sha256 are coherent
+        run: scripts/check-version-sha256-coherence.sh
 
   diff-detection:
     runs-on: ${{ matrix.os }}
@@ -62,7 +66,7 @@ jobs:
           - ubuntu-latest
           - macos-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: comment-only diff is ignored
         run: |
@@ -95,6 +99,9 @@ jobs:
           export GITHUB_OUTPUT="${tmpdir}/output.txt"
           "${GITHUB_WORKSPACE}/scripts/has-meaningful-gitignore-diff.sh" .gitignore
           grep '^changed=false$' "${GITHUB_OUTPUT}"
+
+      - name: gitignore diff helper regression tests
+        run: bash scripts/test-has-meaningful-gitignore-diff.sh
 
       - name: missing final newline diff is ignored
         run: |
@@ -158,15 +165,45 @@ jobs:
           grep '^changed=true$' "${GITHUB_OUTPUT}"
 
   example:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.os }})
     timeout-minutes: 15
-    name: test
     permissions:
       contents: write
       pull-requests: write
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./
+      - name: verify binary is accessible after action
+        run: gitignore.in --version
+
+  # Aggregation gate that produces the bare `test` status context required by
+  # the `default-branch-baseline` ruleset. The platform matrix above reports as
+  # `test (ubuntu-latest)` / `test (macos-latest)`, and `version-coherence`
+  # is a separate required signal, so this job re-exposes a single `test`
+  # context that is green only when every matrix leg and the coherence check
+  # succeed.
+  test:
+    needs:
+      - version-coherence
+      - example
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: example matrix succeeded on all platforms
+        run: |
+          coherence_result='${{ needs.version-coherence.result }}'
+          result='${{ needs.example.result }}'
+          test "${coherence_result}" = success
+          test "${result}" = success
 
   example-pinned-boilerplates:
     runs-on: ubuntu-latest
@@ -176,10 +213,26 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./
         with:
           boilerplates_ref: main
+
+  example-custom-gitignore-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: test (custom gitignore-version)
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: ./
+        with:
+          gitignore-version: v0.2.0
+          allow-unverified-gitignore-version: true
+      - name: verify binary is accessible after action
+        run: gitignore.in --version
 
   timeout-helper:
     runs-on: ubuntu-latest
@@ -188,23 +241,19 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: preserves command exit status
-        run: |
-          set +e
-          scripts/run-with-timeout.sh 5 bash -c 'exit 7'
-          status=$?
-          set -e
-          [ "${status}" -eq 7 ]
-
-      - name: exits 124 when command exceeds timeout
-        run: |
-          set +e
-          scripts/run-with-timeout.sh 1 bash -c 'sleep 5'
-          status=$?
-          set -e
-          [ "${status}" -eq 124 ]
+      - name: runs timeout helper tests
+        run: bash scripts/test-run-with-timeout.sh
 
       - name: stops command group when wrapper receives SIGTERM
         run: bash scripts/test-run-with-timeout-signals.sh
+
+      - name: uses exit 2 for update-version usage errors
+        run: bash scripts/test-update-version-usage.sh
+
+      - name: install helper handles bundled and unverified versions
+        run: bash scripts/test-install-gitignore-in.sh
+
+      - name: pull request permissions helper fails fast when token cannot write
+        run: bash scripts/test-check-create-pull-request-permissions.sh
