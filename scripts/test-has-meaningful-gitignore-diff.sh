@@ -51,3 +51,21 @@ run_tracked_case \
 	true \
 	$'node_modules/\n.env\n' \
 	$'node_modules/\nbuild/\n'
+
+run_tracked_case \
+	"comment-only diff is ignored" \
+	false \
+	$'node_modules/\n.env\n' \
+	$'node_modules/\n.env\n\n # comment-only change\n\t# tab-indented comment-only change\n'
+
+run_tracked_case \
+	"whitespace-only diff is ignored" \
+	false \
+	$'node_modules/\n.env\n' \
+	$'node_modules/\n.env\n\n   \n\t\n'
+
+run_tracked_case \
+	"missing final newline diff is ignored" \
+	false \
+	'node_modules/' \
+	$'node_modules/\n'
