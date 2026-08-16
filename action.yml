@@ -106,7 +106,7 @@ runs:
         ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
-    - uses: gitignore-in/install-gibo@4ddcb33534fb3687b97f4b8f5448dfa2a0357b2c # main
+    - uses: gitignore-in/install-gibo@cf6d9d920a5d429b474661c4c1493b77f187d3db # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - name: warn when boilerplates_ref is not set
