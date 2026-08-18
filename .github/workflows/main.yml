@@ -41,9 +41,7 @@ jobs:
           scandir: ./.tmp/action-yml-shell
 
   actionlint:
-    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@295b836a276b7573edca3beb96b24f49a9898dea # main
-    with:
-      files: ".github/workflows/*.yml"
+    uses: gitignore-in/gh-actions-workflows/.github/workflows/actionlint.yml@881b6c6e2cad02d04e72846696b2fc299ce769c0 # main
 
   version-coherence:
     runs-on: ubuntu-latest
