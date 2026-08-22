@@ -96,6 +96,39 @@ test_bundled_version_verifies_sha256() {
 	[ -x "${fixture_dir}/runner-temp/gitignore-in/bin/gitignore.in" ]
 }
 
+test_bundled_version_reuses_cached_archive() {
+	local fixture_dir output status archive
+	fixture_dir="$(make_fixture)"
+	archive="${fixture_dir}/runner-temp/gitignore-in/Linux-X64/v0.2.1/gitignore-in-x86_64-unknown-linux-gnu-v0.2.1.tar.gz"
+	mkdir -p "$(dirname "${archive}")"
+	printf 'cached archive' >"${archive}"
+
+	set +e
+	output="$(
+		run_installer "${fixture_dir}" "v0.2.1" 2>&1
+	)"
+	status=$?
+	set -e
+
+	if [ "${status}" -ne 0 ]; then
+		echo "${output}" >&2
+		exit 1
+	fi
+
+	if [ -f "${fixture_dir}/logs/wget.log" ]; then
+		echo "expected cached archive to avoid download" >&2
+		cat "${fixture_dir}/logs/wget.log" >&2
+		exit 1
+	fi
+	assert_file_contains "${fixture_dir}/logs/shasum.log" "shasum -a 256 -c"
+	assert_file_contains "${fixture_dir}/logs/tar.log" "tar -xzf ${archive}"
+	if ! grep -F -- "Using cached gitignore.in archive for v0.2.1." <<<"${output}" >/dev/null; then
+		echo "expected cache hit log line" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+}
+
 test_custom_version_requires_explicit_opt_in() {
 	local fixture_dir output status
 	fixture_dir="$(make_fixture)"
@@ -198,6 +231,7 @@ test_custom_version_with_opt_in_skips_sha256() {
 }
 
 test_bundled_version_verifies_sha256
+test_bundled_version_reuses_cached_archive
 test_custom_version_requires_explicit_opt_in
 test_version_rejects_newline_before_logging
 test_custom_version_with_opt_in_skips_sha256
