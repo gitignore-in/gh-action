@@ -49,26 +49,58 @@ macOS-ARM64)
 	;;
 esac
 
-url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
-echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
-wget --tries=3 --timeout=60 "${url}"
+cache_dir="${RUNNER_TEMP}/gitignore-in/${RUNNER_OS}-${RUNNER_ARCH}/${version}"
+archive="${cache_dir}/${target}"
+mkdir -p "${cache_dir}"
+mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
 
-if [ "${version}" = "${bundled_version}" ]; then
-	if ! grep -F "  ${target}" "${repo_root}/bundled-binary.sha256" >"${target}.sha256"; then
-		echo "::error::No checksum entry found for '  ${target}' in bundled-binary.sha256" >&2
-		echo "  repo_root=${repo_root}" >&2
-		echo "  target=${target}" >&2
-		printf "  bundled-binary.sha256 contents:\n" >&2
-		cat "${repo_root}/bundled-binary.sha256" >&2
-		exit 1
+url="https://github.com/gitignore-in/gitignore-in/releases/download/${version}/${target}"
+use_cached="false"
+if [ -f "${archive}" ]; then
+	use_cached="true"
+	if [ "${version}" = "${bundled_version}" ]; then
+		if ! grep -F "  ${target}" "${repo_root}/bundled-binary.sha256" >"${target}.sha256"; then
+			echo "::error::No checksum entry found for '  ${target}' in bundled-binary.sha256" >&2
+			echo "  repo_root=${repo_root}" >&2
+			echo "  target=${target}" >&2
+			printf "  bundled-binary.sha256 contents:\n" >&2
+			cat "${repo_root}/bundled-binary.sha256" >&2
+			exit 1
+		fi
+		cp "${archive}" "${target}"
+		if ! shasum -a 256 -c "${target}.sha256"; then
+			echo "Cached archive checksum mismatch. Re-downloading." >&2
+			use_cached="false"
+			rm -f "${target}"
+			rm -f "${archive}"
+		fi
 	fi
-	shasum -a 256 -c "${target}.sha256"
-else
-	echo "::warning::Custom gitignore-version '${version}' used; SHA-256 verification skipped because allow-unverified-gitignore-version=true. Only use for testing pre-release binaries." >&2
 fi
 
-tar -xzf "${target}"
-mkdir -p "${RUNNER_TEMP}/gitignore-in/bin"
+if [ "${use_cached}" != "true" ]; then
+	echo "Downloading ${url} (${RUNNER_OS}-${RUNNER_ARCH})" >&2
+	wget --tries=3 --timeout=60 "${url}"
+
+	if [ "${version}" = "${bundled_version}" ]; then
+		if ! grep -F "  ${target}" "${repo_root}/bundled-binary.sha256" >"${target}.sha256"; then
+			echo "::error::No checksum entry found for '  ${target}' in bundled-binary.sha256" >&2
+			echo "  repo_root=${repo_root}" >&2
+			echo "  target=${target}" >&2
+			printf "  bundled-binary.sha256 contents:\n" >&2
+			cat "${repo_root}/bundled-binary.sha256" >&2
+			exit 1
+		fi
+		shasum -a 256 -c "${target}.sha256"
+	else
+		echo "::warning::Custom gitignore-version '${version}' used; SHA-256 verification skipped because allow-unverified-gitignore-version=true. Only use for testing pre-release binaries." >&2
+	fi
+
+	mv "${target}" "${archive}"
+else
+	echo "Using cached gitignore.in archive for ${version}." >&2
+fi
+
+tar -xzf "${archive}"
 install -m 0755 gitignore.in "${tmpdir}/gitignore.in.installed"
 mv "${tmpdir}/gitignore.in.installed" "${RUNNER_TEMP}/gitignore-in/bin/gitignore.in"
 echo "${RUNNER_TEMP}/gitignore-in/bin" >>"${GITHUB_PATH}"
