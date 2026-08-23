@@ -9,6 +9,7 @@ as part of the action. Renaming or moving them is a breaking change.
 
 | Script | Purpose |
 | --- | --- |
+| `capture-boilerplates-ref.sh` | Captures the boilerplates database HEAD commit SHA, or an empty string when unavailable |
 | `check-create-pull-request-permissions.sh` | Fails fast when the Actions token cannot write repository contents and pull requests |
 | `has-meaningful-gitignore-diff.sh` | Determines whether a `.gitignore` diff contains meaningful changes (ignoring comment-only lines) |
 | `run-with-timeout.sh` | Runs a command with a timeout, forwarding signals for clean shutdown |
@@ -29,6 +30,7 @@ They are not part of the action's public interface.
 
 | Script | Purpose |
 | --- | --- |
+| `test-capture-boilerplates-ref.sh` | Tests for `capture-boilerplates-ref.sh` |
 | `test-configure-branch-ruleset.sh` | Tests for `configure-branch-ruleset.sh` |
 | `test-has-meaningful-gitignore-diff.sh` | Tests for `has-meaningful-gitignore-diff.sh` |
 | `test-run-with-timeout.sh` | Tests for `run-with-timeout.sh` |
