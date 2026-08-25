@@ -14,32 +14,19 @@ if ! git diff --name-only -- "${target}" | grep -q .; then
 	exit 0
 fi
 
-if git diff --ignore-space-at-eol -- "${target}" |
-	awk '
-		/^diff --git / { in_hunk = 0; next }
-		/^@@ / { in_hunk = 1; next }
-		in_hunk && /^[+-]/ {
-			sign = substr($0, 1, 1)
-			content = substr($0, 2)
-			if (content ~ /^[[:space:]]*($|#)/) {
-				next
-			}
-			keys[content] = 1
-			if (sign == "-") {
-				removed[content]++
-			} else {
-				added[content]++
-			}
-		}
-		END {
-			for (content in keys) {
-				if (removed[content] != added[content]) {
-					found = 1
-				}
-			}
-			exit found ? 0 : 1
-		}
-	'; then
+# Compares significant lines in order (not just as a multiset), so that a
+# reordering of lines around a negation pattern (e.g. `!keep.log` moved
+# before/after the rule it negates) is treated as meaningful even when the
+# same set of lines is added and removed the same number of times.
+filter_significant() {
+	sed -e 's/[[:space:]]*$//' |
+		awk '$0 !~ /^[[:space:]]*($|#)/'
+}
+
+old_content="$(git show ":${target}" | filter_significant)"
+new_content="$(filter_significant <"${target}")"
+
+if [ "${old_content}" != "${new_content}" ]; then
 	echo "changed=true" >>"${GITHUB_OUTPUT:-/dev/stdout}"
 else
 	echo "changed=false" >>"${GITHUB_OUTPUT:-/dev/stdout}"
