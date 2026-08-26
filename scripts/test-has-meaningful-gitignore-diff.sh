@@ -69,3 +69,9 @@ run_tracked_case \
 	false \
 	'node_modules/' \
 	$'node_modules/\n'
+
+run_tracked_case \
+	"reordering a negation pattern around the rule it negates is meaningful" \
+	true \
+	$'*.log\n!keep.log\n' \
+	$'!keep.log\n*.log\n'
