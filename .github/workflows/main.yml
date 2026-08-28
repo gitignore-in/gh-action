@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version: stable
-      - run: go run mvdan.cc/sh/v3/cmd/shfmt@v3.13.1 -d scripts/*.sh
+      - run: go run mvdan.cc/sh/v3/cmd/shfmt@v3.14.0 -d scripts/*.sh
 
   shell-lint:
     runs-on: ubuntu-latest
