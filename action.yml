@@ -106,7 +106,7 @@ runs:
         ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
-    - uses: gitignore-in/install-gibo@9147863f2522f9a802e468842bd40474672da9af # main
+    - uses: gitignore-in/install-gibo@b5aaba5f7d41e4ad5fed904ec0e9d30573419361 # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
     - name: cache gitignore.in binary
