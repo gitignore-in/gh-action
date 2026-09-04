@@ -50,9 +50,18 @@ inputs:
       is checked out at this ref after the update, making .gitignore generation
       reproducible across runs and recording that pinned commit SHA in generated
       pull request bodies. Leave empty to use the latest commit (default
-      behaviour, non-deterministic); the action warns when this input is omitted.
+      behaviour, non-deterministic); the action warns when this input is omitted,
+      or fails when require_boilerplates_ref is true.
     required: false
     default: ""
+  require_boilerplates_ref:
+    description: |
+      When "true", fail the run instead of warning if boilerplates_ref is
+      empty, turning non-deterministic .gitignore generation into a hard
+      error. Leave "false" (default) to keep the existing warn-and-continue
+      behaviour for callers that accept the latest boilerplates database.
+    required: false
+    default: "false"
   gitignore-version:
     description: |
       Version of the gitignore-in binary to download (e.g. v0.2.1).
@@ -115,11 +124,13 @@ runs:
       with:
         path: ${{ runner.temp }}/gitignore-in
         key: gitignore-in-${{ runner.os }}-${{ runner.arch }}-${{ inputs.gitignore-version }}-v1
-    - name: warn when boilerplates_ref is not set
-      if: inputs.boilerplates_ref == ''
+    - name: enforce boilerplates_ref determinism
       run: |
-        echo "::warning::boilerplates_ref is not set; generated pull requests will record the latest boilerplates database commit SHA, but the generated .gitignore may vary between runs."
+        "${GITHUB_ACTION_PATH}/scripts/enforce-boilerplates-determinism.sh"
       shell: bash
+      env:
+        BOILERPLATES_REF: ${{ inputs.boilerplates_ref }}
+        REQUIRE_BOILERPLATES_REF: ${{ inputs.require_boilerplates_ref }}
     - run: |
         "${GITHUB_ACTION_PATH}/scripts/install-gitignore-in.sh"
       env:
