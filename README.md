@@ -72,6 +72,7 @@ Windows and other platforms are not supported. The action exits with an error if
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
 | `delete_branch` | Delete the branch after merge | `true` |
 | `boilerplates_ref` | Git ref (branch, tag, or SHA) of the [toptal/gitignore](https://github.com/toptal/gitignore) boilerplates database to pin. When set, every run produces identical `.gitignore` output for the same `.gitignore.in` template. Leave empty to always use the latest boilerplates (default, non-deterministic). | `""` |
+| `require_boilerplates_ref` | Fail the run instead of warning when `boilerplates_ref` is empty, so non-deterministic `.gitignore` generation becomes a hard error you must opt out of by pinning `boilerplates_ref`. | `false` |
 | `gitignore-version` | Version of the `gitignore-in` binary to download (e.g. `v0.2.1`). This input selects the release artifact only. | `v0.2.1` |
 | `allow-unverified-gitignore-version` | Checksum policy for non-bundled `gitignore-version` values. Leave this disabled unless you are intentionally testing a pre-release binary. | `false` |
 | `timeout_seconds` | Positive timeout in seconds for the `gitignore.in` generation step. Lower this value for fail-fast workflows or raise it for slow runners. | `300` |
@@ -99,6 +100,17 @@ When `boilerplates_ref` is omitted, the action warns that the boilerplates
 database will follow the latest commit on each run. In all cases, generated
 PR bodies include the boilerplates database commit SHA used for that run so the
 provenance is visible in the pull request.
+
+To turn that warning into a hard failure — for example in a workflow that
+must never generate a non-deterministic `.gitignore` — set
+`require_boilerplates_ref: "true"`:
+
+```yaml
+- uses: gitignore-in/gh-action@main
+  with:
+    require_boilerplates_ref: "true"
+    boilerplates_ref: "abc1234"  # now required, or the run fails
+```
 
 ### Adjusting the generation timeout
 
