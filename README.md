@@ -38,6 +38,15 @@ steps:
 > **Note:** Repositories whose default token permissions are set to read-only (common in organizations) must declare `contents: write` and `pull-requests: write` explicitly. The action uses `github.token` to create the pull request via `peter-evans/create-pull-request`, so without these permissions the PR step will fail silently.
 > The action now checks those permissions before creating the PR and stops with a clear error if they are missing.
 
+> **Note on the `gitignore.in` binary cache:** the action caches the downloaded `gitignore.in`
+> binary across runs with `actions/cache`. If a cached archive ever fails its SHA-256 check (for
+> example, a truncated write from a cancelled earlier run), the action re-downloads a verified
+> copy for the current run and evicts the corrupted cache entry with `gh cache delete` so a good
+> archive can be cached again. Evicting the entry requires the `actions: write` permission; without
+> it the action still installs a correct binary for the current run, but logs a warning and the
+> same corrupted archive keeps being restored on future runs until the permission is granted or
+> the cache is cleared manually.
+
 For production use, pin to a specific tag or SHA to avoid unexpected changes:
 
 ```yaml
