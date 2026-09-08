@@ -109,12 +109,19 @@ runs:
     - uses: gitignore-in/install-gibo@5760d0075b827cdebe993a564433adabf81ef2a6 # main
       with:
         boilerplates-ref: ${{ inputs.boilerplates_ref }}
+    - name: compute gitignore-in cache key
+      id: gitignore-in-cache-key
+      run: |
+        echo "key=gitignore-in-${RUNNER_OS}-${RUNNER_ARCH}-${GITIGNORE_VERSION}-v1" >>"${GITHUB_OUTPUT}"
+      env:
+        GITIGNORE_VERSION: ${{ inputs.gitignore-version }}
+      shell: bash
     - name: cache gitignore.in binary
       id: gitignore-in-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/gitignore-in
-        key: gitignore-in-${{ runner.os }}-${{ runner.arch }}-${{ inputs.gitignore-version }}-v1
+        key: ${{ steps.gitignore-in-cache-key.outputs.key }}
     - name: warn when boilerplates_ref is not set
       if: inputs.boilerplates_ref == ''
       run: |
@@ -125,6 +132,8 @@ runs:
       env:
         GITIGNORE_IN_VERSION: ${{ inputs.gitignore-version }}
         GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION: ${{ inputs.allow-unverified-gitignore-version }}
+        GITIGNORE_IN_CACHE_KEY: ${{ steps.gitignore-in-cache-key.outputs.key }}
+        GH_TOKEN: ${{ github.token }}
       shell: bash
 
     - name: run gitignore.in
