@@ -3,6 +3,7 @@ set -euo pipefail
 
 version="${GITIGNORE_IN_VERSION:-${1:-}}"
 allow_unverified="${GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION:-${2:-}}"
+cache_key="${GITIGNORE_IN_CACHE_KEY:-${3:-}}"
 if [ -z "${version}" ]; then
 	echo "usage: $0 <version>" >&2
 	exit 2
@@ -73,6 +74,21 @@ if [ -f "${archive}" ]; then
 			use_cached="false"
 			rm -f "${target}"
 			rm -f "${archive}"
+
+			# actions/cache never overwrites an existing key, so a corrupted
+			# archive saved under this key would otherwise be restored again
+			# on every future run. Evict it so the fresh, verified download
+			# below can be saved back under the same key at the end of this
+			# job. This is best-effort: it silently degrades to "keeps
+			# re-downloading every run" if the token lacks the actions:write
+			# permission needed to delete a cache entry.
+			if [ -n "${cache_key}" ] && command -v gh >/dev/null 2>&1; then
+				if gh cache delete "${cache_key}" >/dev/null 2>&1; then
+					echo "Evicted corrupted cache entry '${cache_key}'." >&2
+				else
+					echo "::warning::Could not evict corrupted cache entry '${cache_key}' (requires the 'actions: write' permission); the same corrupted archive may be restored again next run." >&2
+				fi
+			fi
 		fi
 	fi
 fi

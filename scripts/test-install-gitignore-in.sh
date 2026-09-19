@@ -30,9 +30,20 @@ EOF
 #!/usr/bin/env bash
 set -euo pipefail
 echo "shasum $*" >> "${STUB_LOG_DIR}/shasum.log"
+if [ "${SHASUM_FAIL_ONCE:-}" = "true" ] && [ ! -f "${STUB_LOG_DIR}/shasum.failed-once" ]; then
+	touch "${STUB_LOG_DIR}/shasum.failed-once"
+	exit 1
+fi
 EOF
 
-	chmod +x "${fixture_dir}/bin/wget" "${fixture_dir}/bin/tar" "${fixture_dir}/bin/shasum"
+	cat >"${fixture_dir}/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "gh $*" >> "${STUB_LOG_DIR}/gh.log"
+exit "${STUB_GH_CACHE_DELETE_EXIT:-0}"
+EOF
+
+	chmod +x "${fixture_dir}/bin/wget" "${fixture_dir}/bin/tar" "${fixture_dir}/bin/shasum" "${fixture_dir}/bin/gh"
 	printf '%s\n' "${fixture_dir}"
 }
 
@@ -40,29 +51,21 @@ run_installer() {
 	local fixture_dir="$1"
 	local version="$2"
 	local allow_unverified="${3:-}"
+	shift "$(($# < 3 ? $# : 3))"
 
-	if [ -n "${allow_unverified}" ]; then
-		env \
-			PATH="${fixture_dir}/bin:${PATH}" \
-			STUB_LOG_DIR="${fixture_dir}/logs" \
-			RUNNER_OS=Linux \
-			RUNNER_ARCH=X64 \
-			RUNNER_TEMP="${fixture_dir}/runner-temp" \
-			GITHUB_PATH="${fixture_dir}/github-path" \
-			GITIGNORE_IN_VERSION="${version}" \
-			GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION="${allow_unverified}" \
-			"${installer}"
-	else
-		env \
-			PATH="${fixture_dir}/bin:${PATH}" \
-			STUB_LOG_DIR="${fixture_dir}/logs" \
-			RUNNER_OS=Linux \
-			RUNNER_ARCH=X64 \
-			RUNNER_TEMP="${fixture_dir}/runner-temp" \
-			GITHUB_PATH="${fixture_dir}/github-path" \
-			GITIGNORE_IN_VERSION="${version}" \
-			"${installer}"
-	fi
+	env \
+		PATH="${fixture_dir}/bin:${PATH}" \
+		STUB_LOG_DIR="${fixture_dir}/logs" \
+		RUNNER_OS=Linux \
+		RUNNER_ARCH=X64 \
+		RUNNER_TEMP="${fixture_dir}/runner-temp" \
+		GITHUB_PATH="${fixture_dir}/github-path" \
+		GITIGNORE_IN_VERSION="${version}" \
+		GITIGNORE_IN_ALLOW_UNVERIFIED_VERSION="${allow_unverified}" \
+		GITIGNORE_IN_CACHE_KEY="${GITIGNORE_IN_CACHE_KEY:-test-cache-key}" \
+		GH_TOKEN="test-token" \
+		"$@" \
+		"${installer}"
 }
 
 assert_file_contains() {
@@ -127,6 +130,62 @@ test_bundled_version_reuses_cached_archive() {
 		echo "${output}" >&2
 		exit 1
 	fi
+}
+
+test_bundled_version_evicts_corrupted_cache_on_checksum_mismatch() {
+	local fixture_dir output status archive
+	fixture_dir="$(make_fixture)"
+	archive="${fixture_dir}/runner-temp/gitignore-in/Linux-X64/v0.2.1/gitignore-in-x86_64-unknown-linux-gnu-v0.2.1.tar.gz"
+	mkdir -p "$(dirname "${archive}")"
+	printf 'corrupted archive' >"${archive}"
+
+	set +e
+	output="$(
+		run_installer "${fixture_dir}" "v0.2.1" "" SHASUM_FAIL_ONCE=true GITIGNORE_IN_CACHE_KEY=corrupted-cache-key 2>&1
+	)"
+	status=$?
+	set -e
+
+	if [ "${status}" -ne 0 ]; then
+		echo "${output}" >&2
+		exit 1
+	fi
+
+	assert_file_contains "${fixture_dir}/logs/wget.log" "gitignore-in-x86_64-unknown-linux-gnu-v0.2.1.tar.gz"
+	assert_file_contains "${fixture_dir}/logs/gh.log" "cache delete corrupted-cache-key"
+	if ! grep -F -- "Evicted corrupted cache entry 'corrupted-cache-key'." <<<"${output}" >/dev/null; then
+		echo "expected eviction confirmation log line" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+	[ -x "${fixture_dir}/runner-temp/gitignore-in/bin/gitignore.in" ]
+}
+
+test_bundled_version_warns_when_cache_eviction_fails() {
+	local fixture_dir output status archive
+	fixture_dir="$(make_fixture)"
+	archive="${fixture_dir}/runner-temp/gitignore-in/Linux-X64/v0.2.1/gitignore-in-x86_64-unknown-linux-gnu-v0.2.1.tar.gz"
+	mkdir -p "$(dirname "${archive}")"
+	printf 'corrupted archive' >"${archive}"
+
+	set +e
+	output="$(
+		run_installer "${fixture_dir}" "v0.2.1" "" SHASUM_FAIL_ONCE=true STUB_GH_CACHE_DELETE_EXIT=1 GITIGNORE_IN_CACHE_KEY=corrupted-cache-key 2>&1
+	)"
+	status=$?
+	set -e
+
+	if [ "${status}" -ne 0 ]; then
+		echo "${output}" >&2
+		exit 1
+	fi
+
+	if ! grep -F -- "::warning::Could not evict corrupted cache entry 'corrupted-cache-key'" <<<"${output}" >/dev/null; then
+		echo "expected eviction-failure warning" >&2
+		echo "${output}" >&2
+		exit 1
+	fi
+	[ -x "${fixture_dir}/runner-temp/gitignore-in/bin/gitignore.in" ]
 }
 
 test_custom_version_requires_explicit_opt_in() {
@@ -232,6 +291,8 @@ test_custom_version_with_opt_in_skips_sha256() {
 
 test_bundled_version_verifies_sha256
 test_bundled_version_reuses_cached_archive
+test_bundled_version_evicts_corrupted_cache_on_checksum_mismatch
+test_bundled_version_warns_when_cache_eviction_fails
 test_custom_version_requires_explicit_opt_in
 test_version_rejects_newline_before_logging
 test_custom_version_with_opt_in_skips_sha256
