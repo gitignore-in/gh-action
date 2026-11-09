@@ -55,12 +55,12 @@ inputs:
     default: ""
   gitignore-version:
     description: |
-      Version of the gitignore-in binary to download (e.g. v0.2.1).
+      Version of the gitignore-in binary to download (e.g. v0.2.2).
       Defaults to the version bundled with this action release.
       This input selects the release artifact only; checksum policy is
       controlled separately by allow-unverified-gitignore-version.
     required: false
-    default: "v0.2.1"
+    default: "v0.2.2"
   allow-unverified-gitignore-version:
     description: |
       Allow a custom gitignore-version without SHA-256 verification.
