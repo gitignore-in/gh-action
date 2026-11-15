@@ -67,6 +67,7 @@ Windows and other platforms are not supported. The action exits with an error if
 |---|---|---|
 | `branch_name` | Branch name for the pull request | `gitignore-in` |
 | `base_branch` | Base branch for the pull request | repository default branch |
+| `fetch-depth` | Number of commits to fetch for the repository checkout; set `0` for full history | `1` |
 | `commit_message` | Commit message for the `.gitignore` update | `Update .gitignore by gitignore.in` |
 | `pr_title` | Pull request title | `Update .gitignore` |
 | `pr_body` | Pull request body | `Update .gitignore by gitignore.in` |
@@ -83,6 +84,13 @@ Windows and other platforms are not supported. The action exits with an error if
 >
 > If you override `gitignore-version`, set `allow-unverified-gitignore-version: "true"` to opt in
 > to the unverified download path. The version selector and checksum policy are separate inputs.
+
+### Limiting checkout history
+
+The action fetches one commit by default because generating `.gitignore` and creating or
+updating its pull request do not require the repository's complete history. Set
+`fetch-depth: "0"` when a surrounding workflow needs full history, such as generating
+content from earlier commits.
 
 ### Pinning the boilerplates database
 
