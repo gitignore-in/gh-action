@@ -81,7 +81,7 @@ test_bundled_version_verifies_sha256() {
 
 	set +e
 	output="$(
-		run_installer "${fixture_dir}" "v0.2.1" 2>&1
+		run_installer "${fixture_dir}" "v0.2.2" 2>&1
 	)"
 	status=$?
 	set -e
@@ -91,7 +91,7 @@ test_bundled_version_verifies_sha256() {
 		exit 1
 	fi
 
-	assert_file_contains "${fixture_dir}/logs/wget.log" "gitignore-in-x86_64-unknown-linux-gnu-v0.2.1.tar.gz"
+	assert_file_contains "${fixture_dir}/logs/wget.log" "gitignore-in-x86_64-unknown-linux-gnu-v0.2.2.tar.gz"
 	assert_file_contains "${fixture_dir}/logs/shasum.log" "shasum -a 256 -c"
 	assert_file_contains "${fixture_dir}/github-path" "${fixture_dir}/runner-temp/gitignore-in/bin"
 	[ -x "${fixture_dir}/runner-temp/gitignore-in/bin/gitignore.in" ]
