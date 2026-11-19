@@ -19,6 +19,12 @@ inputs:
       Leave empty to use the repository's default branch.
     required: false
     default: ""
+  fetch-depth:
+    description: |
+      Number of commits to fetch for the repository checkout.
+      Set 0 to fetch the full history. Default: 1.
+    required: false
+    default: "1"
   commit_message:
     description: |
       Commit message for the .gitignore update.
@@ -102,7 +108,7 @@ runs:
   steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
-        fetch-depth: 0
+        fetch-depth: ${{ inputs.fetch-depth }}
         ref: ${{ inputs.base_branch || github.event.repository.default_branch }}
         path: repository
 
