@@ -32,11 +32,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
         run: |
+          set -euo pipefail
+
           version="${INPUT_VERSION}"
           if [ -z "${version}" ]; then
-            latest="$(gh release view --repo "${GITHUB_REPOSITORY}" --json tagName --jq '.tagName')"
-            if [ -z "${latest}" ]; then
-              echo "no latest release found; provide a version via workflow_dispatch input" >&2
+            set +e
+            response_with_headers="$(gh api --include "repos/${GITHUB_REPOSITORY}/releases/latest")"
+            status=$?
+            set -e
+
+            if [ "${status}" -ne 0 ]; then
+              http_status="$(printf '%s\n' "${response_with_headers}" | head -1 | tr -d '\r' | awk '{print $2}')"
+              if [ "${http_status}" = "404" ]; then
+                echo "no latest release found; provide a version via workflow_dispatch input" >&2
+                exit 1
+              fi
+              printf '%s\n' "${response_with_headers}" >&2
+              exit "${status}"
+            fi
+
+            latest="$(printf '%s\n' "${response_with_headers}" | awk 'found { print } /^[[:space:]]*$/ { found = 1 }' | jq -r '.tag_name')"
+            if [ -z "${latest}" ] || [ "${latest}" = "null" ]; then
+              echo "latest release response did not contain a tag name" >&2
               exit 1
             fi
             if ! [[ "${latest}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
