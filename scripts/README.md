@@ -24,6 +24,7 @@ They are not part of the action's public interface.
 | `check-required-status-checks.sh` | Verifies that required status checks are configured on the branch ruleset |
 | `check-version-sha256-coherence.sh` | Checks that the bundled binary version matches its SHA-256 checksum |
 | `configure-branch-ruleset.sh` | Applies the required-status-checks ruleset to the default branch (requires admin token) |
+| `prepare-draft-release.sh` | Resolves a draft-release version and guards against rewriting a published release |
 | `update-version.sh` | Updates the bundled `gitignore.in` version string in `action.yml` (release tooling) |
 
 ## Tests
@@ -33,6 +34,7 @@ They are not part of the action's public interface.
 | `test-capture-boilerplates-ref.sh` | Tests for `capture-boilerplates-ref.sh` |
 | `test-configure-branch-ruleset.sh` | Tests for `configure-branch-ruleset.sh` |
 | `test-has-meaningful-gitignore-diff.sh` | Tests for `has-meaningful-gitignore-diff.sh` |
+| `test-prepare-draft-release.sh` | Tests for `prepare-draft-release.sh` |
 | `test-run-with-timeout.sh` | Tests for `run-with-timeout.sh` |
 | `test-run-with-timeout-signals.sh` | Signal handling tests for `run-with-timeout.sh` |
 | `test-update-version-usage.sh` | Tests for `update-version.sh` |
