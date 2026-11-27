@@ -32,43 +32,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          set -euo pipefail
-
-          version="${INPUT_VERSION}"
-          if [ -z "${version}" ]; then
-            set +e
-            response_with_headers="$(gh api --include "repos/${GITHUB_REPOSITORY}/releases/latest")"
-            status=$?
-            set -e
-
-            if [ "${status}" -ne 0 ]; then
-              http_status="$(printf '%s\n' "${response_with_headers}" | head -1 | tr -d '\r' | awk '{print $2}')"
-              if [ "${http_status}" = "404" ]; then
-                echo "no latest release found; provide a version via workflow_dispatch input" >&2
-                exit 1
-              fi
-              printf '%s\n' "${response_with_headers}" >&2
-              exit "${status}"
-            fi
-
-            latest="$(printf '%s\n' "${response_with_headers}" | awk 'found { print } /^[[:space:]]*$/ { found = 1 }' | jq -r '.tag_name')"
-            if [ -z "${latest}" ] || [ "${latest}" = "null" ]; then
-              echo "latest release response did not contain a tag name" >&2
-              exit 1
-            fi
-            if ! [[ "${latest}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              echo "latest release tag does not match vMAJOR.MINOR.PATCH: ${latest}" >&2
-              exit 1
-            fi
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            version="v${major}.${minor}.$((patch + 1))"
-          fi
-          if ! [[ "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "version must use vMAJOR.MINOR.PATCH format: ${version}" >&2
-            exit 1
-          fi
+          version="$(scripts/prepare-draft-release.sh resolve-version)"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
       - name: Refuse to rewrite a published release
@@ -76,29 +40,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          set -euo pipefail
-
-          set +e
-          response_with_headers="$(gh api --include "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}")"
-          status=$?
-          set -e
-
-          if [ "${status}" -ne 0 ]; then
-            http_status="$(printf '%s' "${response_with_headers}" | head -1 | tr -d '\r' | awk '{print $2}')"
-            if [ "${http_status}" = "404" ]; then
-              exit 0
-            fi
-            printf '%s\n' "${response_with_headers}" >&2
-            exit "${status}"
-          fi
-
-          release_json="$(printf '%s' "${response_with_headers}" | sed '1,/^$/d')"
-          is_draft="$(printf '%s' "${release_json}" | jq -r '.draft')"
-          if [ "${is_draft}" = "true" ]; then
-            exit 0
-          fi
-          echo "release ${VERSION} already exists and is published; choose a new version" >&2
-          exit 1
+          scripts/prepare-draft-release.sh assert-release-is-writable
 
       - name: Delete existing draft release
         env:
